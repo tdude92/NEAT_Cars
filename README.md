@@ -1,8 +1,8 @@
 # NEAT_Cars
     
-    For some time, I’ve been interested in deep learning through backpropagation & gradient descent. Although not as popular as the previously mentioned method, I think it’s really cool how  genetic algorithms incorporate concepts from biology into a method of computation. So I decided to create some sort of artificial intelligence project that uses a genetic algorithm to evolve artificial neural networks.
+  For some time, I’ve been interested in deep learning through backpropagation & gradient descent. Although not as popular as the previously mentioned method, I think it’s really cool how  genetic algorithms incorporate concepts from biology into a method of computation. So I decided to create some sort of artificial intelligence project that uses a genetic algorithm to evolve artificial neural networks.
 
-    With all of the enthusiasm around Tesla and their self-driving cars, it felt fitting for the ANNs to be trained to drive simulated two-dimensional cars.
+  With all of the enthusiasm around Tesla and their self-driving cars, it felt fitting for the ANNs to be trained to drive simulated two-dimensional cars.
 
 
 **Goal:** Use NEAT to evolve artificial neural networks that have the ability to perform three driving tasks.
