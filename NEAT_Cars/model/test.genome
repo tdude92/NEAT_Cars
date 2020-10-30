@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<genome>
+  <node-genes>
+    <node-gene id="0" type="sen"/>
+    <node-gene id="1" type="sen"/>
+    <node-gene id="2" type="sen"/>
+    <node-gene id="3" type="sen"/>
+    <node-gene id="4" type="sen"/>
+    <node-gene id="5" type="out"/>
+    <node-gene id="6" type="out"/>
+  </node-genes>
+  <conn-genes>
+    <conn-gene enable="1" in="0" innovation="0" out="5" weight="-1.4510514"/>
+    <conn-gene enable="1" in="0" innovation="1" out="6" weight="2.0590277"/>
+    <conn-gene enable="1" in="1" innovation="2" out="5" weight="-1.3961946"/>
+    <conn-gene enable="1" in="1" innovation="3" out="6" weight="-0.93327147"/>
+    <conn-gene enable="1" in="2" innovation="4" out="5" weight="-0.7564694"/>
+    <conn-gene enable="1" in="2" innovation="5" out="6" weight="-0.11362219"/>
+    <conn-gene enable="1" in="3" innovation="6" out="5" weight="-0.55213976"/>
+    <conn-gene enable="1" in="3" innovation="7" out="6" weight="0.013200253"/>
+    <conn-gene enable="1" in="4" innovation="8" out="5" weight="-0.29181442"/>
+    <conn-gene enable="1" in="4" innovation="9" out="6" weight="-0.7412728"/>
+  </conn-genes>
+</genome>

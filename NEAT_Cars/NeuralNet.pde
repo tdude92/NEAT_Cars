@@ -1,0 +1,3 @@
+class NeuralNet {
+  NeuralNet() {}
+}
