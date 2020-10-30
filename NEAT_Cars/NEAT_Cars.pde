@@ -1,7 +1,8 @@
 void setup() {
   Genome test = new Genome(4, 2);
+  test.addNode();test.addNode();
   Genome testOffspring = new Genome(test);
-  testOffspring.addNode();
+  testOffspring.addConn();
   test.printGenes(true);
   println();
   testOffspring.printGenes(true);
@@ -22,6 +23,6 @@ void setup() {
   
   GenomeDiff diff2 = new GenomeDiff(test, testOffspring);
   println(diff2.delta);
-  
 }
+
 void draw() {}

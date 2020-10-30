@@ -8,107 +8,20 @@ import java.util.Random;
 float WEIGHT_INIT_MEAN   = 0.0;
 float WEIGHT_INIT_STDDEV = 1.0;
 
-float COMPATABILITY_THRESHOLD = 3.0; // Maximum compatability between two genomes while still being considered the same species.
-
 // Mutation chances
+float NEW_NODE_CHANCE        = 0.03; // Chance of mutating a new node.
+float NEW_CONN_CHANCE        = 0.05; // Chance of mutating a new connection.
 float WEIGHT_MUTATION_CHANCE = 0.8;  // Chance of weight mutating in offspring.
 float WEIGHT_REASSIGN_CHANCE = 0.1;  // Chance of the mutation being a reassignment to a random value.
                                      // If weight will not be reassigned, perturb it slightly.
                                     
 float PERTURBATION_BOUND = 0.2;      // Bounds of the random perturbation (-bound <= perturb < bound). Should be > 0.
 
-// Genome comparison weights
-float CW_E  = 1.0; // Weight of excess genes.
-float CW_D  = 1.0; // Weight of disjoint genes.
-float CW_DW = 0.4; // Weight of average weight difference of matching genes.
-
-int N_NODES = 0;        // Global counter for number of nodes. Used to assign IDs to newly created nodes.
-int INNOVATION_N = 0; // Innovation number. Used to track gene origins.
-
 
 // Utility functions
 float sampleGaussian(float mean, float stddev) {
   Random r = new Random();
   return (float)(r.nextGaussian()*stddev + mean);
-}
-
-
-enum NodeType {
-  SENSOR("sen"),
-  HIDDEN("hid"),
-  OUTPUT("out");
-  
-  final String str; // String abbreviation
-  private NodeType(String str) {this.str = str;}
-  
-  static NodeType getNodeType(String str) {
-    // Get NodeType from string abbreviation
-    for (NodeType type : NodeType.values()) {
-      if (type.str.equals(str))
-        return type;
-    }
-    return null;
-  }
-};
-
-
-class NodeGene {
-  /* Stores information about a node in an ANN. */
-  NodeType type;    // Sensor, Hidden, Output
-  int id;           // Identifier for nodes in ConnGenes
-  
-  NodeGene() {} // Default constructor used when loading from XML.
-  
-  NodeGene(NodeType type) {
-    // Creates a novel node and assigns it a unique id.
-    this.type = type;
-    this.id = N_NODES++;
-  }
-  
-  NodeGene(NodeGene parent) {
-    // Creates an inherited node.
-    // An inherited node is just a clone of the parent.
-    this.type = parent.type;
-    this.id = parent.id;
-  }
-}
-
-
-class ConnGene {
-  /* Stores information about a connection between nodes in the ANN. */
-  int in, out;
-  float weight;
-  boolean enable; // Connections are disabled when a mutation creates a node between in and out.
-  int innovationN;
-  
-  ConnGene() {} // Default constructor used when loading from XML.
-  
-  ConnGene(float weight, int in, int out, boolean enable) {
-    // Constructor used for a new innovation.
-    this.in = in;
-    this.out = out;
-    this.weight = weight;
-    this.enable = enable;
-    this.innovationN = INNOVATION_N++;
-  }
-  
-  ConnGene(ConnGene parent) {
-    // Constructs a copy of a parent gene.
-    this.in = parent.in;
-    this.out = parent.out;
-    this.weight = parent.weight;
-    this.enable = parent.enable; // TODO: chance to reenable
-    this.innovationN = parent.innovationN;
-  }
-  
-  void mutateWeight() {
-    if (random(0, 1) < WEIGHT_REASSIGN_CHANCE) {
-      // TODO
-      // Maybe leave unimplemented.
-    } else {
-      this.weight += random(-PERTURBATION_BOUND, PERTURBATION_BOUND);
-    }
-  }
 }
 
 
@@ -119,13 +32,17 @@ class Genome {
   */
   
   // TODO: add an id string maybe? It would only act as a human-readable identifier.
-  ArrayList<NodeGene> nodeGenes = new ArrayList<NodeGene>(); // TODO: separate sen, hid, out.
+  ArrayList<NodeGene> nodeGenes_sen = new ArrayList<NodeGene>();
+  ArrayList<NodeGene> nodeGenes_hid = new ArrayList<NodeGene>();
+  ArrayList<NodeGene> nodeGenes_out = new ArrayList<NodeGene>();
   ArrayList<ConnGene> connGenes = new ArrayList<ConnGene>();
+  float fitness = 0;
   
   /* Constructors */
   Genome(String filepath) {
     // Loads a genome from a .genome file.
     this.readGenome(filepath);
+    this.linkNodes();
   }
   
   Genome(int nSensor, int nOutput) {
@@ -139,12 +56,21 @@ class Genome {
     /* Initialize this.nodeGenes */
     for (int inID = 0; inID < nSensor; ++inID) {
       // Sensors
-      this.nodeGenes.add(new NodeGene(NodeType.SENSOR));
+      NodeGene sensor = new NodeGene();
+      sensor.id = inID;
+      sensor.type = NodeType.SENSOR;
+      
+      this.nodeGenes_sen.add(sensor);
     }
-    for (int outID = 0; outID < nOutput; ++outID) {
+    for (int outID = nSensor; outID < nSensor + nOutput; ++outID) {
       // Outputs
-      this.nodeGenes.add(new NodeGene(NodeType.OUTPUT));
+      NodeGene output = new NodeGene();
+      output.id = outID;
+      output.type = NodeType.OUTPUT;
+      
+      this.nodeGenes_out.add(output);
     }
+    N_NODES = nSensor + nOutput;
     
     /* Initialize this.connGenes */
     // Iterate through each output for each input and create a connection.
@@ -153,34 +79,113 @@ class Genome {
         this.connGenes.add(new ConnGene(sampleGaussian(WEIGHT_INIT_MEAN, WEIGHT_INIT_STDDEV), inID, outID, true));
       }
     }
+    
+    this.linkNodes();
   }
   
   Genome(Genome parent1, Genome parent2) { // TODO
     // Create mutated and recombined offspring.
+    
+    this.linkNodes();
   }
   
   Genome(Genome parent) {
-    // Create mutated offspring from only one parent.
+    // Create mutated offspring from only one parent
     
-    /* Copy parent genes */
-    for (NodeGene node : parent.nodeGenes) {
-      this.nodeGenes.add(new NodeGene(node));
+    // Deep copy node gene ArrayLists
+    for (NodeGene node : parent.nodeGenes_sen) {
+      this.nodeGenes_sen.add(new NodeGene(node));
     }
+    for (NodeGene node : parent.nodeGenes_hid) {
+      this.nodeGenes_hid.add(new NodeGene(node));
+    }
+    for (NodeGene node : parent.nodeGenes_out) {
+      this.nodeGenes_out.add(new NodeGene(node));
+    }
+    
+    // Deep copy conn gene ArrayList
     for (ConnGene conn : parent.connGenes) {
       this.connGenes.add(new ConnGene(conn));
     }
     
-    /* Mutate genes */
+    this.linkNodes();
+    
+    // Mutate connection weights
     for (ConnGene conn : this.connGenes) {
       if (random(0, 1) < WEIGHT_MUTATION_CHANCE) {
         conn.mutateWeight();
       }
     }
+    
+    // Mutate topology
+    if (random(0, 1) < NEW_NODE_CHANCE) {
+      this.addNode();
+    }
+    if (random(0, 1) < NEW_CONN_CHANCE) {
+      this.addConn();
+    }
   }
   
-  void addConn(int nodeInId, int nodeOutId) {
+  void linkNodes() {
+    // Iterate through each connection and update the in and out arrays of each NodeGene.
+    ArrayList<NodeGene> allNodes = this.getAllNodeGenes();
+    for (ConnGene conn : this.connGenes) {
+      int inId = conn.in, outId = conn.out;
+      
+      // Find NodeGene instances specified by inId and outId
+      NodeGene in = null, out = null;
+      int i = 0;
+      while (i < allNodes.size() && (in == null || out == null)) {
+        // Iterate through each NodeGene instance and check if its id matches with inId or outId
+        if (allNodes.get(i).id == inId) {
+          in = allNodes.get(i);
+        } else if (allNodes.get(i).id == outId) {
+          out = allNodes.get(i);
+        }
+        ++i;
+      }
+      
+      // If in or out are null, then the genome is malformed
+      if (in == null && out == null) {
+        println("Error: ConnGene tried to connect " + conn.in + " and " + conn.out + ", but the input node and output node don't exist.");
+        exit();
+      } else if (in == null) {
+        println("Error: ConnGene tried to connect " + conn.in + " and " + conn.out + ", but the input node doesn't exist.");
+        exit();
+      } else if (out == null) {
+        println("Error: ConnGene tried to connect " + conn.in + " and " + conn.out + ", but the output node doesn't exist.");
+        exit();
+      } else {
+        in.out.add(out);
+        out.in.add(in);
+      }
+    }
+  }
+  
+  void addConn() {
     // Create a new ConnGene connecting two preexisting unconnected nodes.
-    this.connGenes.add(new ConnGene(sampleGaussian(WEIGHT_INIT_MEAN, WEIGHT_INIT_STDDEV), nodeInId, nodeOutId, true));
+    ArrayList<NodeGene> validINodes = new ArrayList<NodeGene>(); // Valid input nodes
+    ArrayList<NodeGene> validONodes = new ArrayList<NodeGene>(); // Valid output nodes
+    
+    validINodes.addAll(this.nodeGenes_hid);
+    validINodes.addAll(this.nodeGenes_sen);
+    validONodes.addAll(this.nodeGenes_hid);
+    validONodes.addAll(this.nodeGenes_out);
+    
+    NodeGene in = null, out = null;
+    int ctr = 0;
+    do {
+      // Pick random input and output nodes to link.
+      in = validINodes.get(int(random(0, validINodes.size())));
+      out = validONodes.get(int(random(0, validONodes.size())));
+      println(in.id, "->", out.id);
+      ctr++;
+    } while (ctr < 100 && in.out.contains(out)); // Check to make sure they're not already linked.
+                                                 // Gives up after 100 tries in case the network becomes fully-connected.
+    
+    if (!in.out.contains(out)) { // Only create a connection if the loop didn't give up.
+      this.connGenes.add(new ConnGene(sampleGaussian(WEIGHT_INIT_MEAN, WEIGHT_INIT_STDDEV), in.id, out.id, true));
+    }
   }
   
   void addNode() {
@@ -191,7 +196,7 @@ class Genome {
     
     // Create a new node and connect it to the endpoints of oldConn.
     NodeGene newNode = new NodeGene(NodeType.HIDDEN);
-    this.nodeGenes.add(newNode);
+    this.nodeGenes_hid.add(newNode);
     this.connGenes.add(new ConnGene(1.0, oldConn.in, newNode.id, true));              // Create connection from oldConn.in to newNode
     this.connGenes.add(new ConnGene(oldConn.weight, newNode.id, oldConn.out, true));  // Create connection from newNode to oldConn.out
   }
@@ -205,7 +210,7 @@ class Genome {
     
     // Write nodeGenes to the XML object.
     XML nodeGeneContainer = root.getChild("node-genes");
-    for (NodeGene gene : this.nodeGenes) {
+    for (NodeGene gene : this.getAllNodeGenes()) {
       XML nodeGeneXML = nodeGeneContainer.addChild("node-gene");
       
       nodeGeneXML.setInt("id", gene.id);
@@ -237,7 +242,14 @@ class Genome {
       nodeGene.id = nodeGeneXML.getInt("id");
       nodeGene.type = NodeType.getNodeType(nodeGeneXML.getString("type"));
 
-      this.nodeGenes.add(nodeGene);
+      // Add node gene the container corresponding to its type
+      if (nodeGene.type == NodeType.SENSOR) {
+        this.nodeGenes_sen.add(nodeGene);
+      } else if (nodeGene.type == NodeType.HIDDEN) {
+        this.nodeGenes_hid.add(nodeGene);
+      } else if (nodeGene.type == NodeType.OUTPUT) {
+        this.nodeGenes_out.add(nodeGene);
+      }
     }
     
     // Read conn-gene data
@@ -257,13 +269,13 @@ class Genome {
   
   void printGenes(boolean verbose) {
     // Prints gene information to console.
-    println("No. sensor: " + this.getNSensor());
-    println("No. hidden: " + this.getNHidden());
-    println("No. output: " + this.getNOutput());
+    println("No. sensor: " + this.nodeGenes_sen.size());
+    println("No. hidden: " + this.nodeGenes_hid.size());
+    println("No. output: " + this.nodeGenes_out.size());
     println("No. conns: " + this.connGenes.size());
     if (verbose) {
       print("Nodes: ");
-      for (NodeGene node : this.nodeGenes)
+      for (NodeGene node : this.getAllNodeGenes())
         print(node.type.str + "(" + str(node.id) + ") "); // Print the node type and id.
       println();
       println("Connections: ");
@@ -275,106 +287,12 @@ class Genome {
     }
   }
   
-  int getNSensor() {
-    int count = 0;
-    for (NodeGene node : this.nodeGenes)
-      if (node.type == NodeType.SENSOR)
-        count++;
-    return count;
-  }
-  int getNHidden() {
-    int count = 0;
-    for (NodeGene node : this.nodeGenes)
-      if (node.type == NodeType.HIDDEN)
-        count++;
-    return count;
-  }
-  int getNOutput() {
-    int count = 0;
-    for (NodeGene node : this.nodeGenes)
-      if (node.type == NodeType.OUTPUT)
-        count++;
-    return count;
-  }
-}
-
-
-class GenomeDiff {
-  /* A struct to hold data about the differences between two genomes */
-  int nD, nE, n;  // no. disjoint, no. excess, size of larger genome.
-  float DW;       // Average difference in weights of matching genes.
-  float delta;    // Compatability distance between two genomes.
-  int share;      // 1 if delta < COMPATABILITY_THRESHOLD, otherwise 0. Used for computing shared fitness.
-  
-  GenomeDiff(Genome g1, Genome g2) {
-    // Compute differences between genomes in constructor
-    
-    // A gene is disjoint when it is contained in only one genome and its innovation
-    // number is within the range of innovation numbers of the other genome.
-    
-    // A gene is excess when it is contained in only one genome and its innovation number
-    // exceeds the highest innovation number in the other genome.
-    
-    this.nD = 0;     // no. disjoint
-    this.nE = 0;     // no. excess
-    int nM = 0;      // no. matching
-    float sumDW = 0; // sum of weight differences.
-    ArrayList<ConnGene> g1Genes = g1.connGenes;
-    ArrayList<ConnGene> g2Genes = g2.connGenes;
-    
-    int i = 0, j = 0;
-    while (i < g1Genes.size() && j < g2Genes.size()) {
-      // Count disjoint genes.
-      
-      int g1Inn = g1Genes.get(i).innovationN;
-      int g2Inn = g2Genes.get(j).innovationN;
-      if (g1Inn != g2Inn) {
-        // If the innovation numbers are not equal, there is a disjoint gene.
-        ++this.nD;
-        
-        if (g1Inn > g2Inn) { // If g1Inn > g2Inn, the jth g2Gene is disjoint.
-          ++j;               // Check next g2Gene.
-        }
-        else {  // If g1Inn < g2Inn, the ith g1Gene is disjoint.
-          ++i;  // Check next g1Gene.
-        }
-      } else {
-        // The ith g1Gene and jth g2Gene are matching.
-        sumDW += abs(g1Genes.get(i).weight - g2Genes.get(j).weight);
-        ++nM;
-        
-        ++i;
-        ++j;
-      }
-    }
-    
-    // Count excess genes.
-    if (i < g1Genes.size()) {
-      // Excess genes in g1Genes.
-      while (i < g1Genes.size()) {
-        ++this.nE;
-        ++i;
-      }
-      
-    } else if (j < g2Genes.size()) {
-      // Excess genes in g2Genes.
-      while (j < g2Genes.size()) {
-        ++this.nE;
-        ++j;
-      }
-    }
-    
-    // If there are no matching genes, return avgDW = Float.MAX_VALUE
-    this.DW = Float.MAX_VALUE;
-    if (nM > 0)
-      this.DW = sumDW/nM;
-    
-    // Compute the compatability distance between two genomes.
-    // Given by the formula (CW_E*nE)/N + (CW_D*nD)/N + CW_DW*DW
-    float n = max(g1Genes.size(), g2Genes.size());
-    this.delta = (CW_E*nE)/n + (CW_D*nD)/n + CW_DW*DW;
-    
-    // Set sh
-    this.share = (this.delta < COMPATABILITY_THRESHOLD) ? 1 : 0;
+  ArrayList<NodeGene> getAllNodeGenes() {
+    // Returns a single ArrayList containing all node genes.
+    ArrayList<NodeGene> out = new ArrayList<NodeGene>();
+    out.addAll(this.nodeGenes_sen);
+    out.addAll(this.nodeGenes_hid);
+    out.addAll(this.nodeGenes_out);
+    return out;
   }
 }
