@@ -9,6 +9,7 @@ float WEIGHT_INIT_MEAN   = 0.0;
 float WEIGHT_INIT_STDDEV = 1.0;
 
 // Mutation chances
+float INHERITED_CONN_DISABLED_RATE = 0.75; // Chance an inherited disabled gene remains disabled.
 float NEW_NODE_CHANCE        = 0.03; // Chance of mutating a new node.
 float NEW_CONN_CHANCE        = 0.05; // Chance of mutating a new connection.
 float WEIGHT_MUTATION_CHANCE = 0.8;  // Chance of weight mutating in offspring.
@@ -75,18 +76,127 @@ class Genome {
     /* Initialize this.connGenes */
     // Iterate through each output for each input and create a connection.
     for (int inID = 0; inID < nSensor; ++inID) {
-      for (int outID = nSensor; outID < nSensor + nOutput; ++outID) {
-        this.connGenes.add(new ConnGene(sampleGaussian(WEIGHT_INIT_MEAN, WEIGHT_INIT_STDDEV), inID, outID, true));
+      for (int outID = 0; outID < nOutput; ++outID) {
+        // Create initial ConnGenes with the appropriate correct innovation number.
+        ConnGene conn = new ConnGene();
+        conn.weight = sampleGaussian(WEIGHT_INIT_MEAN, WEIGHT_INIT_STDDEV);
+        conn.in = inID;
+        conn.out = nSensor + outID;
+        conn.enable = true;
+        conn.innovationN = inID*nOutput + outID;
+        
+        this.connGenes.add(conn);
       }
     }
+    INNOVATION_N = nSensor*nOutput;
     
     this.linkNodes();
   }
   
-  Genome(Genome parent1, Genome parent2) { // TODO
+  Genome(Genome p1, Genome p2) {
     // Create mutated and recombined offspring.
     
+    // Homologous recombination
+    int i = 0, j = 0;
+    while (i < p1.connGenes.size() && j < p2.connGenes.size()) {
+      // Iterate through both parent genomes in parallel.
+      int p1Inn = p1.connGenes.get(i).innovationN;
+      int p2Inn = p2.connGenes.get(j).innovationN;
+
+      if (p1Inn != p2Inn) {
+        // The gene is disjoint if the innovation numbers do not match
+        
+        // Inherit the gene only if it belongs to the fitter parent.
+        if (p1Inn > p2Inn) {
+          // If g1Inn > g2Inn, the p2 gene at index j is disjoint.
+          if (p1.fitness < p2.fitness) {
+            ConnGene inheritedDisjoint = p2.connGenes.get(j);
+            this.connGenes.add(new ConnGene(inheritedDisjoint));
+          }
+          ++j; // Check next p2 gene
+        } else if (p1Inn < p2Inn) {
+          // If g1Inn < g2Inn, the p1 gene at index i is disjoint.
+          if (p1.fitness >= p2.fitness) {
+            ConnGene inheritedDisjoint = p1.connGenes.get(i);
+            this.connGenes.add(new ConnGene(inheritedDisjoint));
+          }
+          ++i; // Check next p1 gene
+        }
+      } else {
+        // The genes are matching if the innovation numbers match
+        
+        // Randomly pick which gene to inherit
+        ConnGene inheritedGene;
+        int choice = round(random(0, 1));
+        if (choice == 0) {
+          // Inherit from p1
+          inheritedGene = new ConnGene(p1.connGenes.get(i));
+        } else {
+          // Inherit from p2
+          inheritedGene = new ConnGene(p2.connGenes.get(j));
+        }
+        
+        if (!p1.connGenes.get(i).enable || !p2.connGenes.get(j).enable) {
+          // If either of the parent genes are disabled, there's a chance
+          // that the gene will stay deactivated.
+          if (random(0, 1) < INHERITED_CONN_DISABLED_RATE) { // NOTE: some genes that were previous enabled in the fitter parent may be disabled.
+            inheritedGene.enable = false;
+          } else {
+            inheritedGene.enable = true;
+          }
+        }
+        
+        this.connGenes.add(inheritedGene);
+        
+        // Increment both counters
+        ++i;
+        ++j;
+      }
+    }
+    
+    // Inherit excess genes from the fitter parent.
+    while (p1.fitness < p2.fitness && j < p2.connGenes.size()) {
+      ConnGene inheritedExcess = p2.connGenes.get(j);
+      this.connGenes.add(new ConnGene(inheritedExcess));
+      ++j;
+    }
+    
+    while (p1.fitness >= p2.fitness && i < p1.connGenes.size()) {
+      ConnGene inheritedExcess = p1.connGenes.get(i);
+      this.connGenes.add(new ConnGene(inheritedExcess));
+      ++i;
+    }
+    
+    // Since only the only genes being inherited are matching genes and
+    // the disjoints/excesses from the fitter parent, inherit the
+    // NodeGenes of the fitter parent.
+    Genome fitter = (p1.fitness < p2.fitness) ? p2 : p1;
+    for (NodeGene node : fitter.nodeGenes_sen) {
+      this.nodeGenes_sen.add(new NodeGene(node));
+    }
+    for (NodeGene node : fitter.nodeGenes_hid) {
+      this.nodeGenes_hid.add(new NodeGene(node));
+    }
+    for (NodeGene node : fitter.nodeGenes_out) {
+      this.nodeGenes_out.add(new NodeGene(node));
+    }
+    
     this.linkNodes();
+    
+    // Mutate connection weights
+    for (ConnGene conn : this.connGenes) {
+      if (random(0, 1) < WEIGHT_MUTATION_CHANCE) {
+        conn.mutateWeight();
+      }
+    }
+    
+    // Mutate topology
+    if (random(0, 1) < NEW_NODE_CHANCE) {
+      this.addNode();
+    }
+    if (random(0, 1) < NEW_CONN_CHANCE) {
+      this.addConn();
+    }
   }
   
   Genome(Genome parent) {
@@ -178,7 +288,6 @@ class Genome {
       // Pick random input and output nodes to link.
       in = validINodes.get(int(random(0, validINodes.size())));
       out = validONodes.get(int(random(0, validONodes.size())));
-      println(in.id, "->", out.id);
       ctr++;
     } while (ctr < 100 && in.out.contains(out)); // Check to make sure they're not already linked.
                                                  // Gives up after 100 tries in case the network becomes fully-connected.

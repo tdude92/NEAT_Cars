@@ -38,10 +38,10 @@ class GenomeDiff {
         // If the innovation numbers are not equal, there is a disjoint gene.
         ++this.nD;
         
-        if (g1Inn > g2Inn) { // If g1Inn > g2Inn, the jth g2Gene is disjoint.
+        if (g1Inn > g2Inn) { // If g1Inn > g2Inn, the g2Gene at index j is disjoint.
           ++j;               // Check next g2Gene.
         }
-        else {  // If g1Inn < g2Inn, the ith g1Gene is disjoint.
+        else {  // If g1Inn < g2Inn, the g1Gene at index i is disjoint.
           ++i;  // Check next g1Gene.
         }
       } else {
@@ -55,19 +55,16 @@ class GenomeDiff {
     }
     
     // Count excess genes.
-    if (i < g1Genes.size()) {
-      // Excess genes in g1Genes.
-      while (i < g1Genes.size()) {
-        ++this.nE;
-        ++i;
-      }
-      
-    } else if (j < g2Genes.size()) {
-      // Excess genes in g2Genes.
-      while (j < g2Genes.size()) {
-        ++this.nE;
-        ++j;
-      }
+    // Excess genes in g1Genes.
+    while (i < g1Genes.size()) {
+      ++this.nE;
+      ++i;
+    }
+    
+    // Excess genes in g2Genes.
+    while (j < g2Genes.size()) {
+      ++this.nE;
+      ++j;
     }
     
     // If there are no matching genes, return avgDW = Float.MAX_VALUE
