@@ -90,7 +90,7 @@ class Genome {
     }
     INNOVATION_N = nSensor*nOutput;
     
-    this.linkNodes();
+    //this.linkNodes();
   }
   
   Genome(Genome p1, Genome p2) {
@@ -181,8 +181,6 @@ class Genome {
       this.nodeGenes_out.add(new NodeGene(node));
     }
     
-    this.linkNodes();
-    
     // Mutate connection weights
     for (ConnGene conn : this.connGenes) {
       if (random(0, 1) < WEIGHT_MUTATION_CHANCE) {
@@ -197,6 +195,8 @@ class Genome {
     if (random(0, 1) < NEW_CONN_CHANCE) {
       this.addConn();
     }
+    
+    this.linkNodes();
   }
   
   Genome(Genome parent) {
@@ -218,8 +218,6 @@ class Genome {
       this.connGenes.add(new ConnGene(conn));
     }
     
-    this.linkNodes();
-    
     // Mutate connection weights
     for (ConnGene conn : this.connGenes) {
       if (random(0, 1) < WEIGHT_MUTATION_CHANCE) {
@@ -234,12 +232,16 @@ class Genome {
     if (random(0, 1) < NEW_CONN_CHANCE) {
       this.addConn();
     }
+    
+    this.linkNodes();
   }
   
   void linkNodes() {
     // Iterate through each connection and update the in and out arrays of each NodeGene.
     ArrayList<NodeGene> allNodes = this.getAllNodeGenes();
     for (ConnGene conn : this.connGenes) {
+      if (!conn.enable) {continue;}
+      
       int inId = conn.in, outId = conn.out;
       
       // Find NodeGene instances specified by inId and outId
@@ -373,8 +375,6 @@ class Genome {
       this.connGenes.add(connGene);
     }
   }
-  
-  NeuralNet contructNeuralNet() {return null;} // TODO
   
   void printGenes(boolean verbose) {
     // Prints gene information to console.
