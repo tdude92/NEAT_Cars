@@ -21,9 +21,9 @@ class NeuralNet {
   
   ArrayList<Node> input = new ArrayList<Node>();    // List of input nodes
   ArrayList<Node> output = new ArrayList<Node>();   // List of output nodes
-  LinkedList<Node> active = new LinkedList<Node>(); // Queue of active nodes
+  LinkedList<Node> active = new LinkedList<Node>(); // Queue of active nodes TODO: Change this to all nodes in topological order.
   
-  NeuralNet(Genome genome, Activation activation) {
+  NeuralNet(Genome genome, Activation activation) { // TODO: Rewrite the way nodes are connected
     this.activation = activation;
     
     // Create the directed graph of Node instances.

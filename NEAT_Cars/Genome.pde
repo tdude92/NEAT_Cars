@@ -1,4 +1,5 @@
 import java.util.Random;
+import java.util.LinkedList;
 
 // Note: during mutation keep a list of all createConn and createNode mutations
 //       to identify which mutations should have the same innovation number.
@@ -33,9 +34,9 @@ class Genome {
   */
   
   // TODO: add an id string maybe? It would only act as a human-readable identifier.
-  ArrayList<NodeGene> nodeGenes_sen = new ArrayList<NodeGene>();
-  ArrayList<NodeGene> nodeGenes_hid = new ArrayList<NodeGene>();
-  ArrayList<NodeGene> nodeGenes_out = new ArrayList<NodeGene>();
+  ArrayList<NodeGene> nodeGenes     = new ArrayList<NodeGene>(); // All node genes. Will be kept topologically ordered.
+  ArrayList<NodeGene> nodeGenes_sen = new ArrayList<NodeGene>(); // Only sensors
+  ArrayList<NodeGene> nodeGenes_out = new ArrayList<NodeGene>(); // Only outputs
   ArrayList<ConnGene> connGenes = new ArrayList<ConnGene>();
   float fitness = 0;
   
@@ -62,6 +63,7 @@ class Genome {
       sensor.type = NodeType.SENSOR;
       
       this.nodeGenes_sen.add(sensor);
+      this.nodeGenes.add(sensor);
     }
     for (int outID = nSensor; outID < nSensor + nOutput; ++outID) {
       // Outputs
@@ -70,6 +72,7 @@ class Genome {
       output.type = NodeType.OUTPUT;
       
       this.nodeGenes_out.add(output);
+      this.nodeGenes.add(output);
     }
     N_NODES = nSensor + nOutput;
     
@@ -171,14 +174,15 @@ class Genome {
     // the disjoints/excesses from the fitter parent, inherit the
     // NodeGenes of the fitter parent.
     Genome fitter = (p1.fitness < p2.fitness) ? p2 : p1;
-    for (NodeGene node : fitter.nodeGenes_sen) {
-      this.nodeGenes_sen.add(new NodeGene(node));
-    }
-    for (NodeGene node : fitter.nodeGenes_hid) {
-      this.nodeGenes_hid.add(new NodeGene(node));
-    }
-    for (NodeGene node : fitter.nodeGenes_out) {
-      this.nodeGenes_out.add(new NodeGene(node));
+    for (NodeGene node : fitter.nodeGenes) {
+      NodeGene inheritedNode = new NodeGene(node);
+      this.nodeGenes.add(inheritedNode);
+      
+      if (inheritedNode.type == NodeType.SENSOR) {
+        this.nodeGenes_sen.add(inheritedNode);
+      } else if (inheritedNode.type == NodeType.OUTPUT) {
+        this.nodeGenes_out.add(inheritedNode);
+      }
     }
     
     // Mutate connection weights
@@ -203,14 +207,15 @@ class Genome {
     // Create mutated offspring from only one parent
     
     // Deep copy node gene ArrayLists
-    for (NodeGene node : parent.nodeGenes_sen) {
-      this.nodeGenes_sen.add(new NodeGene(node));
-    }
-    for (NodeGene node : parent.nodeGenes_hid) {
-      this.nodeGenes_hid.add(new NodeGene(node));
-    }
-    for (NodeGene node : parent.nodeGenes_out) {
-      this.nodeGenes_out.add(new NodeGene(node));
+    for (NodeGene node : parent.nodeGenes) {
+      NodeGene inheritedNode = new NodeGene(node);
+      this.nodeGenes.add(inheritedNode);
+      
+      if (inheritedNode.type == NodeType.SENSOR) {
+        this.nodeGenes_sen.add(inheritedNode);
+      } else if (inheritedNode.type == NodeType.OUTPUT) {
+        this.nodeGenes_out.add(inheritedNode);
+      }
     }
     
     // Deep copy conn gene ArrayList
@@ -238,7 +243,7 @@ class Genome {
   
   void linkNodes() {
     // Iterate through each connection and update the in and out arrays of each NodeGene.
-    ArrayList<NodeGene> allNodes = this.getAllNodeGenes();
+    ArrayList<NodeGene> allNodes = this.nodeGenes;
     for (ConnGene conn : this.connGenes) {
       if (!conn.enable) {continue;}
       
@@ -275,27 +280,48 @@ class Genome {
   }
   
   void addConn() {
-    // Create a new ConnGene connecting two preexisting unconnected nodes.
-    ArrayList<NodeGene> validINodes = new ArrayList<NodeGene>(); // Valid input nodes
-    ArrayList<NodeGene> validONodes = new ArrayList<NodeGene>(); // Valid output nodes
+    // Create a new ConnGene connecting two preexisting unconnected nodes
+    // While avoiding recurrent connections
     
-    validINodes.addAll(this.nodeGenes_hid);
-    validINodes.addAll(this.nodeGenes_sen);
-    validONodes.addAll(this.nodeGenes_hid);
-    validONodes.addAll(this.nodeGenes_out);
+    int senEnd = -1; // One greater than the index of the last sensor node in this.nodeGenes
+    int outBeg = -1; // Index of the first output node in this.nodeGenes
     
-    NodeGene in = null, out = null;
-    int ctr = 0;
+    // Set senEnd and outBeg
+    for (int i = 0; i < this.nodeGenes.size(); ++i) {
+      if (this.nodeGenes.get(i).type != NodeType.SENSOR) {
+        senEnd = i;
+        break;
+      }
+    }
+    for (int i = senEnd; i < this.nodeGenes.size(); ++i) {
+      if (this.nodeGenes.get(i).type == NodeType.OUTPUT) {
+        outBeg = i;
+        break;
+      }
+    }
+    
+    // Pick an input node and output node
+    NodeGene inNode, outNode;
+    boolean exists; // Flag set to whether the connection already exists
+    int attempts = 0; // Track number of attempts
     do {
-      // Pick random input and output nodes to link.
-      in = validINodes.get(int(random(0, validINodes.size())));
-      out = validONodes.get(int(random(0, validONodes.size())));
-      ctr++;
-    } while (ctr < 100 && in.out.contains(out)); // Check to make sure they're not already linked.
-                                                 // Gives up after 100 tries in case the network becomes fully-connected.
+      exists = false;
+      inNode = this.nodeGenes.get(int(random(0, outBeg)));
+      outNode = this.nodeGenes.get(int(random(senEnd, this.nodeGenes.size())));
+      
+      // Check if the connection already exists
+      // TODO: Change this to compute all nonexistent connections and then pick one.
+      for (ConnGene conn : this.connGenes) {
+        if (conn.in == inNode.id && conn.out == outNode.id) {
+          exists = true;
+          break;
+        }
+      }
+      ++attempts;
+    } while (exists && attempts < 100); // Give up after 100 attempts; the network is likely fully-connected
     
-    if (!in.out.contains(out)) { // Only create a connection if the loop didn't give up.
-      this.connGenes.add(new ConnGene(sampleGaussian(WEIGHT_INIT_MEAN, WEIGHT_INIT_STDDEV), in.id, out.id, true));
+    if (attempts < 100) { // If unconnected inNodes and outNodes have been found before giving up
+      this.connGenes.add(new ConnGene(sampleGaussian(WEIGHT_INIT_MEAN, WEIGHT_INIT_STDDEV), inNode.id, outNode.id, true));
     }
   }
   
@@ -307,7 +333,17 @@ class Genome {
     
     // Create a new node and connect it to the endpoints of oldConn.
     NodeGene newNode = new NodeGene(NodeType.HIDDEN);
-    this.nodeGenes_hid.add(newNode);
+    
+    int nodeGenesLength = this.nodeGenes.size();
+    for (int i = 0; i < nodeGenesLength; ++i) {
+      if (this.nodeGenes.get(i).id == oldConn.out) {
+        this.nodeGenes.add(i, newNode); // Insert the new node into the sorted ArrayList
+                                        // Inserting the new node this way allows this.nodeGenes
+                                        // to represent the topological order of each node.
+        break;
+      }
+    }
+    
     this.connGenes.add(new ConnGene(1.0, oldConn.in, newNode.id, true));              // Create connection from oldConn.in to newNode
     this.connGenes.add(new ConnGene(oldConn.weight, newNode.id, oldConn.out, true));  // Create connection from newNode to oldConn.out
   }
@@ -321,9 +357,11 @@ class Genome {
     
     // Write nodeGenes to the XML object.
     XML nodeGeneContainer = root.getChild("node-genes");
-    for (NodeGene gene : this.getAllNodeGenes()) {
+    for (int i = 0; i < this.nodeGenes.size(); ++i) {
+      NodeGene gene = this.nodeGenes.get(i);
       XML nodeGeneXML = nodeGeneContainer.addChild("node-gene");
       
+      nodeGeneXML.setInt("order", i); // Preserve topological order
       nodeGeneXML.setInt("id", gene.id);
       nodeGeneXML.setString("type", gene.type.str);
     }
@@ -343,7 +381,7 @@ class Genome {
     saveXML(root, filepath);
   }
   
-  void readGenome(String filepath) {
+  void readGenome(String filepath) { // BIG TODO: READ TOPOLOGICAL ORDER AND REORDER this.nodeGenes IF NEEDED IN CASE AN XML IMPLEMENTATION DOES NOT PRESERVE ORDER
     // Copy data from xml into this.connGenes and this.nodeGenes
     XML root = loadXML(filepath);
     
@@ -354,10 +392,9 @@ class Genome {
       nodeGene.type = NodeType.getNodeType(nodeGeneXML.getString("type"));
 
       // Add node gene the container corresponding to its type
+      this.nodeGenes.add(nodeGene);
       if (nodeGene.type == NodeType.SENSOR) {
         this.nodeGenes_sen.add(nodeGene);
-      } else if (nodeGene.type == NodeType.HIDDEN) {
-        this.nodeGenes_hid.add(nodeGene);
       } else if (nodeGene.type == NodeType.OUTPUT) {
         this.nodeGenes_out.add(nodeGene);
       }
@@ -378,13 +415,13 @@ class Genome {
   
   void printGenes(boolean verbose) {
     // Prints gene information to console.
-    println("No. sensor: " + this.nodeGenes_sen.size());
-    println("No. hidden: " + this.nodeGenes_hid.size());
-    println("No. output: " + this.nodeGenes_out.size());
-    println("No. conns: " + this.connGenes.size());
+    println("No. sensor:", this.nodeGenes_sen.size());
+    println("No. hidden:", this.nodeGenes.size() - this.nodeGenes_sen.size() - this.nodeGenes_out.size());
+    println("No. output:", this.nodeGenes_out.size());
+    println("No. conns:", this.connGenes.size());
     if (verbose) {
       print("Nodes: ");
-      for (NodeGene node : this.getAllNodeGenes())
+      for (NodeGene node : this.nodeGenes)
         print(node.type.str + "(" + str(node.id) + ") "); // Print the node type and id.
       println();
       println("Connections: ");
@@ -394,14 +431,5 @@ class Genome {
           println("[innov: " + str(conn.innovationN) + ", " + enableStr + "]\t" + str(conn.in) + " -> " + str(conn.out) + ",\tw: "  + weightStr);
       }
     }
-  }
-  
-  ArrayList<NodeGene> getAllNodeGenes() {
-    // Returns a single ArrayList containing all node genes.
-    ArrayList<NodeGene> out = new ArrayList<NodeGene>();
-    out.addAll(this.nodeGenes_sen);
-    out.addAll(this.nodeGenes_hid);
-    out.addAll(this.nodeGenes_out);
-    return out;
   }
 }
