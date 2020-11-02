@@ -1,10 +1,3 @@
-// Genome comparison weights
-float CW_E  = 1.0; // Weight of excess genes.
-float CW_D  = 1.0; // Weight of disjoint genes.
-float CW_DW = 0.4; // Weight of average weight difference of matching genes.
-
-float COMPATABILITY_THRESHOLD = 3.0; // Maximum compatability between two genomes while still being considered the same species.
-
 class GenomeDiff {
   /* A struct to hold data about the differences between two genomes */
   int nD, nE, n;  // no. disjoint, no. excess, size of larger genome.

@@ -1,24 +1,6 @@
 import java.util.Random;
 import java.util.LinkedList;
 
-// Note: during mutation keep a list of all createConn and createNode mutations
-//       to identify which mutations should have the same innovation number.
-
-// Weight initialization
-// The initial values of weights will be sampled from a Gaussian distribution.
-float WEIGHT_INIT_MEAN   = 0.0;
-float WEIGHT_INIT_STDDEV = 1.0;
-
-// Mutation chances
-float INHERITED_CONN_DISABLED_RATE = 0.75; // Chance an inherited disabled gene remains disabled.
-float NEW_NODE_CHANCE        = 0.03; // Chance of mutating a new node.
-float NEW_CONN_CHANCE        = 0.05; // Chance of mutating a new connection.
-float WEIGHT_MUTATION_CHANCE = 0.8;  // Chance of weight mutating in offspring.
-float WEIGHT_REASSIGN_CHANCE = 0.1;  // Chance of the mutation being a reassignment to a random value.
-                                     // If weight will not be reassigned, perturb it slightly.
-                                    
-float PERTURBATION_BOUND = 0.2;      // Bounds of the random perturbation (-bound <= perturb < bound). Should be > 0.
-
 
 // Utility functions
 float sampleGaussian(float mean, float stddev) {
@@ -283,42 +265,46 @@ class Genome {
     // Create a new ConnGene connecting two preexisting unconnected nodes
     // While avoiding recurrent connections
     
+    // Set senEnd
     int senEnd = -1; // One greater than the index of the last sensor node in this.nodeGenes
-    int outBeg = -1; // Index of the first output node in this.nodeGenes
-    
-    // Set senEnd and outBeg
     for (int i = 0; i < this.nodeGenes.size(); ++i) {
       if (this.nodeGenes.get(i).type != NodeType.SENSOR) {
         senEnd = i;
         break;
       }
     }
-    for (int i = senEnd; i < this.nodeGenes.size(); ++i) {
-      if (this.nodeGenes.get(i).type == NodeType.OUTPUT) {
-        outBeg = i;
-        break;
-      }
-    }
     
     // Pick an input node and output node
     NodeGene inNode, outNode;
-    boolean exists; // Flag set to whether the connection already exists
+    boolean invalid; // Flag set to whether a link between inNode and outNode is invalid
     int attempts = 0; // Track number of attempts
     do {
-      exists = false;
-      inNode = this.nodeGenes.get(int(random(0, outBeg)));
-      outNode = this.nodeGenes.get(int(random(senEnd, this.nodeGenes.size())));
+      invalid = false;
+      
+      // Since the this.nodeGenes is topologically sorted, we can avoid creating recurrent connections
+      // by choosing two indices of this.nodeGenes such that inIdx < outIdx.
+      int inIdx = int(random(0, this.nodeGenes.size() - 1)); // There's no clear-cut boundary between the output nodes and hidden (hidden nodes could be topologically
+                                                             // ordered after outputs) nodes in this.nodeGenes, so we can't set an upper bound to avoid picking output nodes.
+                                                             
+                                                             // The input node can't be the final element because the output needs to be after the input.
+                                                             
+      int outIdx = int(random(max(inIdx + 1, senEnd), this.nodeGenes.size())); // Clamp the lower bounds to be greater than the index of the first non-sensor node
+                                                                               // Prevents the outIdx from referring to a sensor node.
+      inNode = this.nodeGenes.get(inIdx);
+      outNode = this.nodeGenes.get(outIdx);
+      
+      // Check if inIdx refers to an output node
+      if (this.nodeGenes.get(inIdx).type == NodeType.OUTPUT) {invalid = true;}
       
       // Check if the connection already exists
-      // TODO: Change this to compute all nonexistent connections and then pick one.
       for (ConnGene conn : this.connGenes) {
         if (conn.in == inNode.id && conn.out == outNode.id) {
-          exists = true;
+          invalid = true;
           break;
         }
       }
       ++attempts;
-    } while (exists && attempts < 100); // Give up after 100 attempts; the network is likely fully-connected
+    } while (invalid && attempts < 100); // Give up after 100 attempts; the network is likely fully-connected
     
     if (attempts < 100) { // If unconnected inNodes and outNodes have been found before giving up
       this.connGenes.add(new ConnGene(sampleGaussian(WEIGHT_INIT_MEAN, WEIGHT_INIT_STDDEV), inNode.id, outNode.id, true));

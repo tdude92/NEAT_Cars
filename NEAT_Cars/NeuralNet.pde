@@ -15,14 +15,14 @@ class Node {
 
 
 class NeuralNet {
-  int depth; // Used for drawing. TODO: compute with DFS?
+  int depth; // Used for drawing
   Activation activation; // Activation function used in the nn
   
   ArrayList<Node> input = new ArrayList<Node>();    // List of input nodes
   ArrayList<Node> output = new ArrayList<Node>();   // List of output nodes
   ArrayList<Node> nodes = new ArrayList<Node>();   // All nodes in topological order
   
-  NeuralNet(Genome genome, Activation activation) { // TODO: Rewrite the way nodes are connected
+  NeuralNet(Genome genome, Activation activation) {
     this.activation = activation;
     
     // Create the directed graph of Node instances.
@@ -37,6 +37,7 @@ class NeuralNet {
       // Traverse through the directed graph of Nodes in reverse from the current output Node to the sensors using a queue and BFS
       LinkedList<NodeGene> qNodes = new LinkedList<NodeGene>(); // Queue of nodes to visit next
       LinkedList<Node> qDests = new LinkedList<Node>(); // Stores the output destination of each node in qNodes, forming a "structure of queues"
+
       for (NodeGene prevGene : outGene.in) {
         // Add initial values to qNodes
         qNodes.add(prevGene);
@@ -49,10 +50,14 @@ class NeuralNet {
         
         // Get the node described by currNodeGene
         Node node;
+        boolean visited = false; 
         if ((node = existingNodes.get(currNodeGene)) == null) {
           // If the node is not in existingNodes, construct a new node
           node = new Node(currNodeGene);
           existingNodes.put(currNodeGene, node);
+        } else {
+          // This node has been visited already
+          visited = true;
         }
         
         // Get the weight of the connection between the two nodes
@@ -70,11 +75,11 @@ class NeuralNet {
         // Link nodes
         destNode.inNodes.add(node);      // Add node into destNode's list of inputs
         destNode.weights.append(weight); // Add the weight corresponding to this connection to destNode.weights
+        if (visited) {continue;}
         
-        for (NodeGene nextGene : currNodeGene.in) {
-          // Add the next nodes we need to vist to qNodes
-          // Update qInbound 
-          qNodes.add(nextGene);
+        for (NodeGene prevGene : currNodeGene.in) {
+          // Add the next nodes we need to vist to qNodes and update qDests
+          qNodes.add(prevGene);
           qDests.add(node);
         }
       }
@@ -93,9 +98,11 @@ class NeuralNet {
       NodeGene gene = genome.nodeGenes.get(i);
       this.nodes.add(existingNodes.get(gene));
     }
+    
+    this.depth = this.computeDepth();
   }
   
-  void forward(float[] inputs) { // inputs should not include the bias. TODO
+  void forward(float[] inputs) {
     // Performs a forward pass on the network
     if (inputs.length != this.input.size() - 1) {
       // Input array size mismatch (subtract 1 from this.input.size() because the bias node doesn't count as an input)
@@ -124,7 +131,46 @@ class NeuralNet {
     }
   }
   
-  void drawNN() {} // TODO
+  int computeDepth() {
+    // Compute the maximum depth of the neural net
+    int maxDepth = Integer.MIN_VALUE;
+    
+    // Go through each possible path from each output node to each sensor node
+    // "Structure of queues" 
+    LinkedList<Node> qNode = new LinkedList<Node>(); // Stores the current position on each path
+    IntList qDepth = new IntList();                  // Stores the number of steps it took to get to the current position of each path
+    
+    for (Node outNode : this.output) {
+      // Initialize the structure of stacks
+      qNode.add(outNode);
+      qDepth.append(1);
+    }
+    
+    while (qNode.size() > 0) {
+      Node node = qNode.remove();
+      int depth = qDepth.remove(0);
+      
+      if (node.gene.type == NodeType.SENSOR) {
+        // Reached the end of a possible path
+        if (depth > maxDepth) {
+          maxDepth = depth;
+        }
+      } else {
+        // If the node is not a sensor, haven't reached the end yet
+        for (Node nextNode : node.inNodes) {
+          qNode.add(nextNode);
+          qDepth.append(depth + 1);
+        }
+      }
+      
+    }
+    return maxDepth;
+  }
+  
+  void drawNN(float x1, float y1, float x2, float y2) {
+    // Args are the top left and bottom right corners of the bounding box of the drawing
+    
+  }
   
   void printOutput() {
     // Print the state of the output nodes

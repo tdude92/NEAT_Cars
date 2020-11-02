@@ -14,6 +14,7 @@ void setup() {
   float[] input = {1, 1, 1, 1};
   testnet.forward(input);
   testnet.printOutput();
+  println(testnet.computeDepth());
   
   
   //p1.writeGenome("./model/test.genome");
