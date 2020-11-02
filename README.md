@@ -8,7 +8,6 @@
 **Goal:** Use NEAT to evolve artificial neural networks that have the ability to perform three driving tasks.
 1. Steer a car around a curved course.
 2. Park a car in a specific position & orientation.
-3. Merge into oncoming highway traffic from an on-ramp.
 
 
 NEAT Paper: http://nn.cs.utexas.edu/downloads/papers/stanley.ec02.pdf
