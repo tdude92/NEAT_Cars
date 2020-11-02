@@ -1,5 +1,5 @@
 void setup() {
-  Genome p1 = new Genome(4, 2), p2;
+  Genome p1 = new Genome(4, 2);//, p2;
   p1.addNode();p1.addNode();p1.addNode();
   p1.addConn();
   p1.linkNodes(); // TODO: uncomment this.linkNodes in the constructor of Genome after done testing with neural nets.
@@ -10,6 +10,7 @@ void setup() {
   //g.printGenes(true);
   
   NeuralNet testnet = new NeuralNet(p1, new Sigmoid(4.9));
+  testnet.printConns();
   float[] input = {1, 1, 1, 1};
   testnet.forward(input);
   testnet.printOutput();
