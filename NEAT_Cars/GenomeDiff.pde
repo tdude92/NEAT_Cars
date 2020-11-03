@@ -3,7 +3,6 @@ class GenomeDiff {
   int nD, nE, n;  // no. disjoint, no. excess, size of larger genome.
   float DW;       // Average difference in weights of matching genes.
   float delta;    // Compatability distance between two genomes.
-  int share;      // 1 if delta < COMPATABILITY_THRESHOLD, otherwise 0. Used for computing shared fitness.
   
   GenomeDiff(Genome g1, Genome g2) {
     // Compute differences between genomes in constructor
@@ -69,8 +68,5 @@ class GenomeDiff {
     // Given by the formula (CW_E*nE)/N + (CW_D*nD)/N + CW_DW*DW
     float n = max(g1Genes.size(), g2Genes.size());
     this.delta = (CW_E*nE)/n + (CW_D*nD)/n + CW_DW*DW;
-    
-    // Set sh
-    this.share = (this.delta < COMPATABILITY_THRESHOLD) ? 1 : 0;
   }
 }

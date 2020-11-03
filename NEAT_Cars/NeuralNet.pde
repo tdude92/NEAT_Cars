@@ -1,5 +1,41 @@
 import java.util.LinkedList;
 
+// Activation functions
+interface Activation {
+  // Functional interface for activation function.
+  float f(float x);
+}
+
+
+class Sigmoid implements Activation {
+  float k = 1; // Horizontal compression factor.
+  float f(float x) {
+    return 1/(1 + exp(-this.k*x));
+  }
+  
+  Sigmoid() {} // Default constructor
+  Sigmoid(float k) {this.k = k;}
+}
+
+
+// Softmax function for classification tasks
+float[] softmax(float[] input) {
+  float[] out = new float[input.length];
+  
+  float sumExp = 0; // Get the sum of the elements in input after applying the exponential function
+  for (int i = 0; i < input.length; ++i) {
+    sumExp += exp(input[i]);
+  }
+  
+  // Populate out
+  for (int i = 0; i < input.length; ++i) {
+    out[i] = exp(input[i])/sumExp;
+  }
+  
+  return out;
+}
+
+
 class Node {
   NodeGene gene;
   float value = 0;
@@ -17,6 +53,7 @@ class Node {
 class NeuralNet {
   int depth; // Used for drawing
   Activation activation; // Activation function used in the nn
+  Genome genome; // Reference to the genome used to construct this nn
   
   ArrayList<Node> input = new ArrayList<Node>();    // List of input nodes
   ArrayList<Node> output = new ArrayList<Node>();   // List of output nodes
@@ -24,6 +61,7 @@ class NeuralNet {
   
   NeuralNet(Genome genome, Activation activation) {
     this.activation = activation;
+    this.genome = genome;
     
     // Create the directed graph of Node instances.
     HashMap<NodeGene, Node> existingNodes = new HashMap<NodeGene, Node>(); // Track existing nodes so that the same node isn't created twice
@@ -102,7 +140,7 @@ class NeuralNet {
     this.depth = this.computeDepth();
   }
   
-  void forward(float[] inputs) {
+  float[] forward(float[] inputs) {
     // Performs a forward pass on the network
     if (inputs.length != this.input.size() - 1) {
       // Input array size mismatch (subtract 1 from this.input.size() because the bias node doesn't count as an input)
@@ -129,6 +167,8 @@ class NeuralNet {
       }
       node.value = this.activation.f(node.value); // Apply activation function
     }
+    
+    return this.getOutput();
   }
   
   int computeDepth() {
@@ -168,8 +208,16 @@ class NeuralNet {
   }
   
   void drawNN(float x1, float y1, float x2, float y2) {
-    // Args are the top left and bottom right corners of the bounding box of the drawing
+    // Args are the top left and bottom right corners of the bounding box of the drawing TODO use this.depth
     
+  }
+  
+  float[] getOutput() {
+    float[] out = new float[this.output.size()];
+    for (int i = 0; i < this.output.size(); ++i) {
+      out[i] = this.output.get(i).value;
+    }
+    return out;
   }
   
   void printOutput() {

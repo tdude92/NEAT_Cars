@@ -83,3 +83,47 @@ class ConnGene {
     }
   }
 }
+
+
+/* Classes used to compare innovations                           */
+/* So that we can identify duplicate innovations in a generation */
+
+class NodeInnovation {
+  int in, out;                                  // The ids of the nodes whose connection gets split by the new node
+  NodeGene nodeInnovation;                      // The mutated NodeGene instance
+  ConnGene inConnInnovation, outConnInnovation; // The mutated ConnGene instances
+  
+  NodeInnovation(NodeGene nodeInnovation, ConnGene inConnInnovation, ConnGene outConnInnovation) {
+    this.nodeInnovation = nodeInnovation;
+    this.inConnInnovation = inConnInnovation;
+    this.outConnInnovation = outConnInnovation;
+    this.in = inConnInnovation.in;
+    this.out = outConnInnovation.out;
+  }
+  
+  boolean equals(NodeInnovation other) {
+    // Checks if two innovations are identical
+    if (other.in == this.in && other.out == this.out)
+      return true;
+    else
+      return false;
+  }
+}
+
+class ConnInnovation {
+  int in, out;
+  ConnGene innovation;
+  
+  ConnInnovation(ConnGene innovation) {
+    this.innovation = innovation;
+    this.in = innovation.in;
+    this.out = innovation.out;
+  }
+  
+  boolean equals(ConnInnovation other) {
+    if (other.in == this.in && other.out == this.out)
+      return true;
+    else
+      return false;
+  }
+}

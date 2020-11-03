@@ -22,3 +22,6 @@ float CW_D  = 1.0; // Weight of disjoint genes.
 float CW_DW = 0.4; // Weight of average weight difference of matching genes.
 
 float COMPATABILITY_THRESHOLD = 3.0; // Maximum compatability between two genomes while still being considered the same species.
+
+// Natural selection
+float CULL_PERCENT = 0.25; // Percentage of the population that is not allowed to reproduce at the end of a generation.

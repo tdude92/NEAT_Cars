@@ -21,6 +21,7 @@ class Genome {
   ArrayList<NodeGene> nodeGenes_out = new ArrayList<NodeGene>(); // Only outputs
   ArrayList<ConnGene> connGenes = new ArrayList<ConnGene>();
   float fitness = 0;
+  boolean culled = false; // Set to true if this genome gets eliminated by selection
   
   /* Constructors */
   Genome(String filepath) {
@@ -75,7 +76,7 @@ class Genome {
     }
     INNOVATION_N = nSensor*nOutput;
     
-    //this.linkNodes();
+    this.linkNodes();
   }
   
   Genome(Genome p1, Genome p2) {
