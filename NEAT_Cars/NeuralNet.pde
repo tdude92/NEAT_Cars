@@ -128,6 +128,7 @@ class NeuralNet {
       Node sensor = existingNodes.get(gene);
       this.input.add(sensor); // Sensor nodes have already been created and stored in existingNodes
     }
+
     this.input.get(0).value = 1.0; // Set bias value to 1.0
                                    // The bias is the node at index 0 of this.input
     

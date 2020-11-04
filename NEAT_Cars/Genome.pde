@@ -20,8 +20,15 @@ class Genome {
   ArrayList<NodeGene> nodeGenes_sen = new ArrayList<NodeGene>(); // Only sensors
   ArrayList<NodeGene> nodeGenes_out = new ArrayList<NodeGene>(); // Only outputs
   ArrayList<ConnGene> connGenes = new ArrayList<ConnGene>();
+  
   float fitness = 0;
+  float rawFitness = 0; // the previous value of this.fitness gets moved to here when it gets updated to shared fitness
   boolean culled = false; // Set to true if this genome gets eliminated by selection
+  int allocatedOffspring; // Set by Species.allocateOffspring
+  
+  // These are set if a major innovation happens during construction of this object
+  NodeInnovation nodeInnov = null;
+  ConnInnovation connInnov = null;
   
   /* Constructors */
   Genome(String filepath) {
@@ -122,14 +129,9 @@ class Genome {
           inheritedGene = new ConnGene(p2.connGenes.get(j));
         }
         
-        if (!p1.connGenes.get(i).enable || !p2.connGenes.get(j).enable) {
-          // If either of the parent genes are disabled, there's a chance
-          // that the gene will stay deactivated.
-          if (random(0, 1) < INHERITED_CONN_DISABLED_RATE) { // NOTE: some genes that were previous enabled in the fitter parent may be disabled.
-            inheritedGene.enable = false;
-          } else {
-            inheritedGene.enable = true;
-          }
+        if ((!p1.connGenes.get(i).enable) ^ (!p2.connGenes.get(j).enable)) {
+          // If only one of the parent genes are disabled, the gene will be reenabled
+          inheritedGene.enable = true;
         }
         
         this.connGenes.add(inheritedGene);
@@ -308,7 +310,11 @@ class Genome {
     } while (invalid && attempts < 100); // Give up after 100 attempts; the network is likely fully-connected
     
     if (attempts < 100) { // If unconnected inNodes and outNodes have been found before giving up
-      this.connGenes.add(new ConnGene(sampleGaussian(WEIGHT_INIT_MEAN, WEIGHT_INIT_STDDEV), inNode.id, outNode.id, true));
+      ConnGene innovation = new ConnGene(sampleGaussian(WEIGHT_INIT_MEAN, WEIGHT_INIT_STDDEV), inNode.id, outNode.id, true);
+      this.connGenes.add(innovation);
+      
+      // Set this.connInnov
+      this.connInnov = new ConnInnovation(innovation);
     }
   }
   
@@ -331,8 +337,14 @@ class Genome {
       }
     }
     
-    this.connGenes.add(new ConnGene(1.0, oldConn.in, newNode.id, true));              // Create connection from oldConn.in to newNode
-    this.connGenes.add(new ConnGene(oldConn.weight, newNode.id, oldConn.out, true));  // Create connection from newNode to oldConn.out
+    ConnGene inConn  = new ConnGene(1.0, oldConn.in, newNode.id, true);
+    ConnGene outConn = new ConnGene(oldConn.weight, newNode.id, oldConn.out, true);
+    
+    this.connGenes.add(inConn);   // Create connection from oldConn.in to newNode
+    this.connGenes.add(outConn);  // Create connection from newNode to oldConn.out
+    
+    // Set this.nodeInnov
+    this.nodeInnov = new NodeInnovation(newNode, inConn, outConn);
   }
   
   /* I/O functions for reading/writing objects */

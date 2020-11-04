@@ -29,14 +29,19 @@ class Evaluator {
     // Updates the population after raw fitnesses have been assigned to each genome
     // The population gets updated to the next generation, the fields get updated to the
     // current generation.
-    this.updateSpecies();
-    this.computeSharedFitness();
     
+    // Sort by raw fitness first to get best, median, worst genomes
     this.genomes = this.mergeSortGenomes(this.genomes, 0, this.genomes.length - 1);
     this.bestGenome = this.genomes[0];
     this.medianGenome = this.genomes[this.genomes.length/2]; // If the array has an even number of elements, just take one Genome on either 
                                                              // side of the center (We can't find the average of two genomes)
     this.worstGenome = this.genomes[this.genomes.length - 1];
+    
+    this.updateSpecies();
+    this.computeSharedFitness();
+    
+    // Sort by shared fitness this time
+    this.genomes = this.mergeSortGenomes(this.genomes, 0, this.genomes.length - 1);
     
     this.cullPopulation();
     this.allocateOffspring();
@@ -47,7 +52,8 @@ class Evaluator {
   }
   
   void updateSpecies() {
-    // Updates the Species instances in the population according to measured fitness data
+    // Organize each genome into Species objects and delete extinct species
+    // Also computes the total fitness of each species
     
     // Reset each species object
     for (Species species : this.species) {
@@ -65,6 +71,7 @@ class Evaluator {
         if (diff.delta < COMPATABILITY_THRESHOLD) {
           speciesFound = true;
           species.addGenome(genome);
+          break;
         }
       }
       
@@ -94,6 +101,7 @@ class Evaluator {
     // The population of the species it belongs to
     for (Species species : this.species) {
       for (Genome genome : species.genomes) {
+        genome.rawFitness = genome.fitness;
         genome.fitness /= species.population();
       }
     }
@@ -106,6 +114,17 @@ class Evaluator {
     for (int i = this.genomes.length - 1; i >= this.genomes.length - n_cull; --i) {
       this.genomes[i].culled = true; // RIP :(
     }
+    
+    // Remove completely elminated species
+    ArrayList<Species> culledSpecies = new ArrayList<Species>();
+    for (Species species : this.species) {
+      if (species.culled()) {
+        culledSpecies.add(species);
+      }
+    }
+    for (Species species : culledSpecies) {
+      this.species.remove(species);
+    }
   }
   
   void allocateOffspring() {
@@ -117,42 +136,98 @@ class Evaluator {
         totalFitness += genome.fitness;
     }
     
-    // Allocate offspring for each species
-    int allocated = 0;
+    // Update the total fitness of each species
     for (Species species : this.species) {
       species.speciesFitness = 0;
+      species.allocatedOffspring = 0; // Reset this too
       // Calculate speciesFitness
       for (Genome genome : species.genomes) {
         if (!genome.culled)
           species.speciesFitness += genome.fitness;
       }
+    }
+    
+    // Allocate offspring to each species
+    int allocated = 0;
+    for (Species species : this.species) {
+      // This computation is imprecise since we're rounding
       
       species.allocatedOffspring = round(this.genomes.length*(species.speciesFitness/totalFitness));
       allocated += species.allocatedOffspring;
+
+      if (allocated == this.genomes.length) {
+        // All spaces in this.genomes have been allocated
+        break;
+      } else if (allocated > this.genomes.length) {
+        // Overallocated. Subtract the overflow from this species' allocatedOffspring variable
+        int error = allocated - this.genomes.length;
+        species.allocatedOffspring -= error;
+        allocated -= error;
+        break;
+      }
     }
     
-    // Due to imprecision, the number of allocated offspring may not equal the set population of the simulation
-    if (this.genomes.length < allocated) {
-      // Find a species that is not extinct and has been allocatedOffspring
-      int error = allocated - this.genomes.length;
-      for (Species species : this.species) {
-        if (species.speciesFitness > 0 && species.allocatedOffspring > error) { // species.speciesFitness == 0 ==> all genomes of species were culled
-          species.allocatedOffspring -= error;
-        }
+    while (allocated < this.genomes.length) {
+      // Underallocated. Distribute additional free spaces randomly
+      Species species = this.species.get(int(random(0, this.species.size()))); // Pick a random species
+      if (!species.culled()) {
+        species.allocatedOffspring++;
+        allocated++;
       }
-    } else if (this.genomes.length > allocated) {
-      // Find a species that is not extinct
-      int error = this.genomes.length - allocated;
-      for (Species species : this.species) {
-        if (species.speciesFitness > 0) {
-          species.allocatedOffspring += error;
-        }
-      }
+    }
+    
+    // Finally, allocate offspring to each individual of each species
+    for (Species species : this.species) {
+      species.allocateOffspring();
     }
   }
   
   void constructOffspring() {
-    // TODO keep track of duplicate innovations btw
+    // Construct offspring and place them into this.genomes
+    // Also find duplicate innovations and sets them to be the same
+    
+    ArrayList<NodeInnovation> nodeInnovs = new ArrayList<NodeInnovation>();
+    ArrayList<ConnInnovation> connInnovs = new ArrayList<ConnInnovation>();
+    
+    // Store the next generation in a buffer array
+    Genome[] genomeBuf = new Genome[this.genomes.length];
+    
+    int i = 0; // Index of a position in genomeBuf
+    for (Species species : this.species) {
+      for (Genome parent : species.genomes) {
+        for (int j = 0; j < parent.allocatedOffspring; ++j) {
+          ArrayList<Genome> matingPartners = species.getAliveGenomesExcluding(parent);
+          Genome offspring = null;
+          if (matingPartners.size() == 0 || random(0, 1) < CHANCE_NO_CROSSOVERS) {
+            // Offspring is produced without any crossovers
+            offspring = new Genome(parent);
+          } else {
+            // Offspring will have crossovers
+            Genome parent2;
+            if (this.species.size() > 1 && random(1, 1) < CHANCE_INTERSPECIES) {
+              // Offspring will be the product of genomes of two different species
+              // TODO
+            } else {
+              // Offspring is from two genomes of the same species
+              parent2 = matingPartners.get(int(random(0, matingPartners.size())));
+              offspring = new Genome(parent, parent2);
+            }
+          }
+          
+          // Add innovations to nodeInnovs and connInnovs
+          if (offspring.nodeInnov != null) {
+            nodeInnovs.add(offspring.nodeInnov);
+          }
+          if (offspring.connInnov != null) {
+            connInnovs.add(offspring.connInnov);
+          }
+          genomeBuf[i] = offspring;
+          ++i;
+        }
+      }
+    }
+    this.genomes = genomeBuf; // Flush buffer
+    // Remove duplicate innovations TODO
   }
   
   void constructNeuralNets() {

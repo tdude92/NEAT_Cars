@@ -70,7 +70,7 @@ class ConnGene {
     this.in = parent.in;
     this.out = parent.out;
     this.weight = parent.weight;
-    this.enable = parent.enable; // TODO: chance to reenable
+    this.enable = parent.enable;
     this.innovationN = parent.innovationN;
   }
   
