@@ -1,3 +1,6 @@
+// NeuroEvolution of Augmented Topologies implemented according to:
+// http://nn.cs.utexas.edu/downloads/papers/stanley.gecco02_1.pdf
+
 // Note: during mutation keep a list of all createConn and createNode mutations
 //       to identify which mutations should have the same innovation number.
 

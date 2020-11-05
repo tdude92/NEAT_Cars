@@ -25,4 +25,13 @@ float COMPATABILITY_THRESHOLD = 1.0; // Maximum compatability between two genome
 // Natural selection and reproduction
 float CULL_PERCENT = 0.25; // Percentage of the population that is not allowed to reproduce at the end of a generation.
 float CHANCE_NO_CROSSOVERS = 0.25;
-float CHANCE_INTERSPECIES = 0.001;
+float CHANCE_INTERSPECIES = 0.001; // Unimplemented TODO
+
+/* SIMULATION CONSTANTS */
+
+// Simulation description:
+// 5 units in the coordinate system is equivalent to 1 meter
+// The units that will be used are: m, m/s, m/s^2
+
+float FRAMERATE = 60;
+float DT = 1/FRAMERATE; // Seconds between frames
