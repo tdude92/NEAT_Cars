@@ -1,3 +1,6 @@
+long t = millis();
+Car test = new Car(new Vec2f(500, 400), new Vec2f(0, -1), color(255));
+
 void setup() {
   /* TESTS */
   // Uncomment any one of these tests to run the tests I used during development
@@ -9,7 +12,17 @@ void setup() {
   /* Sketch setup */
   size(1200, 720);
   frameRate(FRAMERATE);
+  
+  test.gas();
 }
 
 void draw() {
+  background(0);
+  test.update();
+  if (test.pos.y < -CAR_L/2) {
+    test.pos.y = height + CAR_L/2;
+  }
+  if (millis() - t > 5000) {
+    test.brake();
+  }
 }

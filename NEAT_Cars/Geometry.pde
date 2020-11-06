@@ -26,6 +26,22 @@ class Vec2f {
     return new Vec2f(this.x*cos(theta) - this.y*sin(theta), this.x*sin(theta) + this.y*cos(theta));
   }
   
+  Vec2f perpendicular(boolean clockwise) {
+    // Returns the vector perpendicular to this
+    if (clockwise) {
+      // Clockwise
+      return new Vec2f(this.y, -this.x);
+    } else {
+      // Counterclockwise
+      return new Vec2f(-this.y, this.x);
+    }
+  }
+  
+  float dot(Vec2f v) {
+    // Dot product of two vectors
+    return this.x*v.x + this.y*v.y;
+  }
+  
   float magnitude() {
     return sqrt(pow(this.x, 2) + pow(this.y, 2));
   }
