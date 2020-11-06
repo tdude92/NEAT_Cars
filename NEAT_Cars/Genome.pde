@@ -2,7 +2,7 @@ import java.util.Random;
 
 
 // Utility functions
-float sampleGaussian(float mean, float stddev) {
+float sampleGaussian(float mean, float stddev) { // Used for weight initialization
   Random r = new Random();
   return (float)(r.nextGaussian()*stddev + mean);
 }
@@ -14,31 +14,31 @@ class Genome {
     Contains methods for inheritance, mutation, file i/o, and translation to phenotype.
   */
   
-  // TODO: add an id string maybe? It would only act as a human-readable identifier.
   ArrayList<NodeGene> nodeGenes     = new ArrayList<NodeGene>(); // All node genes. Will be kept topologically ordered.
   ArrayList<NodeGene> nodeGenes_sen = new ArrayList<NodeGene>(); // Only sensors
   ArrayList<NodeGene> nodeGenes_out = new ArrayList<NodeGene>(); // Only outputs
   ArrayList<ConnGene> connGenes = new ArrayList<ConnGene>();
   
   float fitness = 0;
-  float rawFitness = 0; // the previous value of this.fitness gets moved to here when it gets updated to shared fitness
+  float rawFitness = 0; // fitness value before applying fitness sharing. Used to find best, median, worst performance
   boolean culled = false; // Set to true if this genome gets eliminated by selection
-  int allocatedOffspring; // Set by Species.allocateOffspring
+  int allocatedOffspring; // Set by Species.allocateOffspring. The number of offspring this Genome can produce
   
   // These are set if a major innovation happens during construction of this object
+  // At most one node innovation and one conn innovation can happen during mutation, so no array is needed
   NodeInnovation nodeInnov = null;
   ConnInnovation connInnov = null;
   
   /* Constructors */
   Genome(String filepath) {
-    // Loads a genome from a .genome file.
+    // Loads a genome from a .xml file.
     this.readGenome(filepath);
     this.linkNodes();
   }
   
   Genome(int nSensor, int nOutput) {
     // Used to construct a starting population genome.
-    // Encodes a neural net that connects inputs directly to outputs.
+    // Encodes a neural net that fully connects inputs directly to outputs.
 
     // Add a bias to the sensor nodes.
     // A bias is a sensor node set to a constant value of 1.
@@ -63,6 +63,9 @@ class Genome {
       this.nodeGenes_out.add(output);
       this.nodeGenes.add(output);
     }
+    // NOTE: Each starting genome is IDENTICAL topologically, so the ids of their nodes should be identical as well.
+    // This is why the node ids are set using the value of the counter variable of the for loops
+    
     N_NODES = nSensor + nOutput;
     
     /* Initialize this.connGenes */
@@ -89,6 +92,10 @@ class Genome {
     // Create mutated and recombined offspring.
     
     // Homologous recombination
+    // NOTE: ConnGenes in this.connGenes are always in order of innovation number because:
+    //       1. The order of the ConnGenes in the genomes of the initial population is sorted from lowest to highest in terms of innovation number
+    //       2. Newly mutated connections are added to the end of this.connGenes and are assigned a new higher innovation number
+    //       3. The following loop iterates through parent genomes, which are sorted, so genes are inherited in order of innovation number
     int i = 0, j = 0;
     while (i < p1.connGenes.size() && j < p2.connGenes.size()) {
       // Iterate through both parent genomes in parallel.
@@ -329,9 +336,8 @@ class Genome {
     int nodeGenesLength = this.nodeGenes.size();
     for (int i = 0; i < nodeGenesLength; ++i) {
       if (this.nodeGenes.get(i).id == oldConn.out) {
-        this.nodeGenes.add(i, newNode); // Insert the new node into the sorted ArrayList
-                                        // Inserting the new node this way allows this.nodeGenes
-                                        // to represent the topological order of each node.
+        this.nodeGenes.add(i, newNode); // Inserting the new node to be before its output destination
+                                        // ensures that topological order is maintained
         break;
       }
     }

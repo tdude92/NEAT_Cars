@@ -1,5 +1,4 @@
-long t = millis();
-Car test = new Car(new Vec2f(500, 400), new Vec2f(0, -1), color(255));
+Car test = new Car(new Vec2f(500, 400), new Vec2f(0, -1), color(255, 0, 0));
 
 void setup() {
   /* TESTS */
@@ -18,11 +17,15 @@ void setup() {
 
 void draw() {
   background(0);
-  test.update();
   if (test.pos.y < -CAR_L/2) {
     test.pos.y = height + CAR_L/2;
   }
-  if (millis() - t > 5000) {
-    test.brake();
+  
+  test.cruise();
+  if (keyPressed) {
+    if (key == 'w') {test.gas();}
+    else if (key == 's') {test.brake();}
   }
+  
+  test.update();
 }

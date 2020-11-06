@@ -66,7 +66,7 @@ class GenomeDiff {
     
     // Compute the compatability distance between two genomes.
     // Given by the formula (CW_E*nE)/N + (CW_D*nD)/N + CW_DW*DW
-    float n = max(g1Genes.size(), g2Genes.size());
+    float n = max(g1Genes.size(), g2Genes.size()); // Number of genes in the larger genome
     this.delta = (CW_E*nE)/n + (CW_D*nD)/n + CW_DW*DW;
   }
 }

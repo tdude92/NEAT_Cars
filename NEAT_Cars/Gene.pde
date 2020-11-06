@@ -30,7 +30,7 @@ class NodeGene {
   ArrayList<NodeGene> in = new ArrayList<NodeGene>();
   ArrayList<NodeGene> out = new ArrayList<NodeGene>();
   
-  NodeGene() {} // Default constructor used when loading from XML.
+  NodeGene() {} // Default constructor used when loading from XML. Fields are set manually.
   
   NodeGene(NodeType type) {
     // Creates a new node with a unique id.
@@ -111,7 +111,7 @@ class NodeInnovation {
 }
 
 class ConnInnovation {
-  int in, out;
+  int in, out; // Node IDs of the input and output nodes
   ConnGene innovation;
   
   ConnInnovation(ConnGene innovation) {
@@ -121,6 +121,7 @@ class ConnInnovation {
   }
   
   boolean equals(ConnInnovation other) {
+    // Check if the input and destination of the connections are the same
     if (other.in == this.in && other.out == this.out)
       return true;
     else

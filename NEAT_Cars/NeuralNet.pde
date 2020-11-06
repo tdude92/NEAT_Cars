@@ -37,6 +37,8 @@ float[] softmax(float[] input) {
 
 
 class Node {
+  // A neuron in the neural network
+  // Holds a value for neuron activation and data about incoming connections
   NodeGene gene;
   float value = 0;
   
@@ -101,9 +103,7 @@ class NeuralNet {
         // Get the weight of the connection between the two nodes
         float weight = 0;
         for (ConnGene conn : genome.connGenes) {
-          // The ConnGene describing the connection between node and destNode is guaranteed to exist
-          // Because the link between the two NodeGenes describing node and destNode was created using
-          // a ConnGene in genome.linkNodes()
+          // Find the ConnGene that created the link in the two NodeGene objects
           if (conn.in == node.gene.id && conn.out == destNode.gene.id) {
             weight = conn.weight;
             break;
@@ -134,11 +134,11 @@ class NeuralNet {
     
     // Add nodes to this.nodes in topologically sorted order
     for (int i = 0; i < genome.nodeGenes.size(); ++i) {
-      NodeGene gene = genome.nodeGenes.get(i);
+      NodeGene gene = genome.nodeGenes.get(i); // genome.nodeGenes is already topologically sorted
       this.nodes.add(existingNodes.get(gene));
     }
     
-    this.depth = this.computeDepth();
+    this.depth = this.computeDepth(); // Find the number of layers in the NN
   }
   
   float[] forward(float[] inputs) {
