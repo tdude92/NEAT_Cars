@@ -145,7 +145,7 @@ class NeuralNet {
     // Performs a forward pass on the network
     if (inputs.length != this.input.size() - 1) {
       // Input array size mismatch (subtract 1 from this.input.size() because the bias node doesn't count as an input)
-      println("Input array size mismatch. Tried to input a size", inputs.length, "into a size", this.input.size(), "input layer.");
+      println("Input array size mismatch. Tried to input a size", inputs.length, "into a size", this.input.size() - 1, "input layer.");
       exit();
     }
     
@@ -208,11 +208,6 @@ class NeuralNet {
     return maxDepth;
   }
   
-  void drawNN(float x1, float y1, float x2, float y2) {
-    // Args are the top left and bottom right corners of the bounding box of the drawing TODO use this.depth
-    
-  }
-  
   float[] getOutput() {
     float[] out = new float[this.output.size()];
     for (int i = 0; i < this.output.size(); ++i) {
@@ -236,6 +231,78 @@ class NeuralNet {
         print(str(inNode.gene.id) + " ");
       }
       println("} -> " + str(node.gene.id) + " [" + node.gene.type.str + "]");
+    }
+  }
+
+  void drawNN(float x1, float y1, float x2, float y2) {
+    // Args are the top left and bottom right corners of the bounding box of the drawing
+    
+    float nodeRadius = 10;
+    
+    // Colours for neuron activation
+    color posColour = color(100, 255, 100);
+    color negColour = color(255, 100, 100);
+    
+    // Hashmap that maps nodes to their x, y positions. Used for drawing connections between nodes.
+    HashMap<Node, Vec2f> nodePos = new HashMap<Node, Vec2f>();
+    
+    // TODO: Remove depth
+    
+    // Sensors
+    float inputDY = (y2 - y1) / (this.input.size() - 1); // Length of the space between sensor nodes (there are n-1 spaces between n nodes)
+    for (int i = 0; i < this.input.size(); ++i) {
+      Node node = this.input.get(i);
+      
+      fill(lerpColor(negColour, posColour, node.value));
+      circle(x1, y1 + i*inputDY, nodeRadius);
+      
+      nodePos.put(node, new Vec2f(x1, y1 + i*inputDY));
+    }
+    
+    // Outputs
+    float outputDY = (y2 - y1) / (this.output.size() - 1); // Length of the space between output nodes
+    for (int i = 0; i < this.output.size(); ++i) {
+      Node node = this.output.get(i);
+      
+      fill(lerpColor(negColour, posColour, node.value));
+      circle(x2, y1 + i*outputDY, nodeRadius);
+      
+      nodePos.put(node, new Vec2f(x2, y1 + i*outputDY));
+    }
+    
+    // Hidden nodes and connections
+    for (Node node : this.nodes) {
+      if (node.gene.type != NodeType.SENSOR) { // Sensors are already drawn and have no incoming connections
+        if (node.gene.type == NodeType.HIDDEN) {
+          // Draw the node if it's a hidden node
+          float nodeX = random(x1 + 2*nodeRadius, x2 - 2*nodeRadius); // Bounds are set so that hidden nodes won't overlap with input/output nodes
+          float nodeY = random(y1 + 20, y2 - 20);
+
+          fill(lerpColor(negColour, posColour, node.value));
+          circle(nodeX, nodeY, nodeRadius);
+          
+          nodePos.put(node, new Vec2f(nodeX, nodeY));
+          }
+          
+          // Draw incoming connections of the node
+          for (int i = 0; i < node.inNodes.size(); ++i) {
+            Node inNode = node.inNodes.get(i);
+            float weight = node.weights.get(i);
+            
+            Vec2f inPos = nodePos.get(inNode);
+            Vec2f outPos = nodePos.get(node);
+
+            if (weight < 0.05) {
+              stroke(lerpColor(negColour, posColour, 0.5));
+            } else if (weight > 0) {
+              stroke(posColour);
+            } else if (weight < 0) {
+              stroke(negColour);
+            }
+            line(inPos.x, inPos.y, outPos.x, outPos.y);
+        }
+        stroke(0); // Reset stroke to black
+      }
     }
   }
 }
