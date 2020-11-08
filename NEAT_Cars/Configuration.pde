@@ -35,3 +35,4 @@ float CHANCE_INTERSPECIES = 0.001; // Unimplemented TODO
 
 float FRAMERATE = 60;
 float DT = 1/FRAMERATE; // Seconds between frames
+boolean VISION_LINES = true; // Draw car vision lines

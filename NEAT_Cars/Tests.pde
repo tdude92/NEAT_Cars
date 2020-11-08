@@ -68,5 +68,5 @@ void testPretrainedXOR(float a, float b) {
   NeuralNet nn = new NeuralNet(xorGenome, new Sigmoid(4.9));
   float[] in = {a, b};
   println("Model output:", a, "^", b, "=", nn.forward(in)[0]);
-  exit();
+  nn.drawNN(100, 100, 800, 300);
 }

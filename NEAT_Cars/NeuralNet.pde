@@ -249,7 +249,7 @@ class NeuralNet {
     // TODO: Remove depth
     
     // Sensors
-    float inputDY = (y2 - y1) / (this.input.size() - 1); // Length of the space between sensor nodes (there are n-1 spaces between n nodes)
+    float inputDY = (y2 - y1) / (this.input.size());
     for (int i = 0; i < this.input.size(); ++i) {
       Node node = this.input.get(i);
       
@@ -260,7 +260,7 @@ class NeuralNet {
     }
     
     // Outputs
-    float outputDY = (y2 - y1) / (this.output.size() - 1); // Length of the space between output nodes
+    float outputDY = (y2 - y1) / (this.output.size());
     for (int i = 0; i < this.output.size(); ++i) {
       Node node = this.output.get(i);
       

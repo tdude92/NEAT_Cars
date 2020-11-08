@@ -85,7 +85,7 @@ class Genome {
     }
     INNOVATION_N = nSensor*nOutput;
     
-    //this.linkNodes();
+    this.linkNodes();
   }
   
   Genome(Genome p1, Genome p2) {
