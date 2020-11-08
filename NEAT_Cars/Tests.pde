@@ -4,7 +4,7 @@ void trainXOR() {
   // Test NEAT on emulating the XOR operator
   int trial = 0;
   while (true){
-      int ctr = 0;
+    int ctr = 0;
     Evaluator eval = new Evaluator(1000, new Sigmoid(4.9));
     eval.initPopulation(2, 1);
     while (true) {

@@ -18,9 +18,14 @@ float BRAKING_CONSTANT = 5000;
 float LATV_DECAY = 0.90;
 
 // Utility
-public float clamp(float x, float lower, float upper) {
+float clamp(float x, float lower, float upper) {
   // Clamp a value x between lower and upper bounds
   return min(max(x, lower), upper);
+}
+
+float roundN(float x, int n) {
+  // Round x to n decimals
+  return round(x*pow(10, n))/pow(10, n);
 }
 
 class Car {
@@ -30,7 +35,11 @@ class Car {
   
   NeuralNet nn;
   boolean crashedFlag = false;
+  
+  // Visual
   int colour;
+  String state1 = "null"; // gas/brake/cruise
+  String state2 = "null"; // left/right/straight
   
   // Holds the distance from each wall
   float[] wallDistances = new float[5]; // {0deg, -45deg, -90deg, 90deg, 45deg} if 0 deg is straight ahead and the angle increases counterclockwise
@@ -122,7 +131,16 @@ class Car {
       }
     }
     
-    this.draw();
+    if (!ASAP) {
+      // Draw car, nn, and write information onto sketch
+      fill(255);
+      text(str(roundN(this.v.magnitude(), 1)) + " km/h", 1250, 200);
+      text("Action 1: " + this.state1, 1250, 220);
+      text("Action 2: " + this.state2, 1250, 240);
+      
+      this.nn.drawNN(1200, 520, 1390, 710);
+      this.draw();
+    }
   }
   
   void scanWalls() {
@@ -157,7 +175,7 @@ class Car {
         this.wallDistances[i] = 1;
       }
       
-      if (VISION_LINES) {
+      if (!ASAP && VISION_LINES) {
         // Draw vision lines and intersections
         color fill = lerpColor(color(255, 100, 100), color(100, 255, 100), this.wallDistances[i]);
         stroke(fill);
@@ -231,8 +249,6 @@ class Car {
       case 1: this.steerRight(); break;
       case 2: this.straight();   break;
     }
-    // Draw this.nn
-    this.nn.drawNN(1200, 520, 1390, 710);
   }
   
   boolean crashed(LineSegment wall) {
@@ -252,26 +268,32 @@ class Car {
   // Actions that the car can perform
   void gas() {
     // Update forces to simulate if the driver stepped on the gas
+    this.state1 = "gas";
     this.fBraking = new Vec2f(0, 0);
     this.fTraction = this.dir.scale(TRACTIVE_FORCE);
   }
   void cruise() {
     // Update forces to simulate if the driver did nothing
+    this.state1 = "cruise";
     this.fBraking = new Vec2f(0, 0);
     this.fTraction = new Vec2f(0, 0);
   }
   void brake() {
     // Update forces to simulate if the driver stepped on the brakes
+    this.state1 = "brake";
     this.fBraking = this.dir.scale(-BRAKING_CONSTANT);
     this.fTraction = new Vec2f(0, 0);
   }
   void steerLeft() {
+    this.state2 = "left";
     this.steeringAngle = -STEERING_ANGLE;
   }
   void steerRight() {
+    this.state2 = "right";
     this.steeringAngle = STEERING_ANGLE;
   }
   void straight() {
+    this.state2 = "straight";
     this.steeringAngle = 0;
   }
   

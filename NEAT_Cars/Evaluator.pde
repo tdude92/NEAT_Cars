@@ -230,7 +230,8 @@ class Evaluator {
       }
     }
     this.genomes = genomeBuf; // Flush buffer
-    // Remove duplicate innovations TODO
+    
+    // Set all duplicate innovations to be equal (TODO OR MAYBE LEAVE UNIMPLEMENTED)
   }
   
   void constructNeuralNets() {
