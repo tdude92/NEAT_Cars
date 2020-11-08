@@ -5,7 +5,7 @@
 //       to identify which mutations should have the same innovation number.
 
 class Evaluator {
-  int generation = 0;
+  int generation = 1;
   Genome bestGenome, medianGenome, worstGenome;
   ArrayList<Species> species = new ArrayList<Species>();
   Activation activation;

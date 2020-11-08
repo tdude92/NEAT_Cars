@@ -1,3 +1,7 @@
+// NOTE: I ACCIDENTALLY DELETED GUI_BUILDER_DATA
+//       I CHANGED THE NAME SO THAT OPENING GUI 
+//       BUILDER WON'T WIPE THIS FILE'S CODE
+
 /* =========================================================
  * ====                   WARNING                        ===
  * =========================================================
@@ -102,37 +106,26 @@ public void ct_tf_change(GTextField source, GEvent event) { //_CODE_:ct_tf:76983
 
 public void wim_tf_change(GTextField source, GEvent event) { //_CODE_:wim_tf:606060:
   //println("textfield1 - GTextField >> GEvent." + event + " @ " + millis());
-  WEIGHT_INIT_MEAN = int(wim_tf.getText());
+  WEIGHT_INIT_MEAN = float(wim_tf.getText());
   println("WEIGHT_INIT_MEAN set to " + WEIGHT_INIT_MEAN);
 } //_CODE_:wim_tf:606060:
 
 public void wis_tf_change(GTextField source, GEvent event) { //_CODE_:wis_tf:862046:
   //println("textfield2 - GTextField >> GEvent." + event + " @ " + millis());
-  WEIGHT_INIT_STDDEV = int(wis_tf.getText());
+  WEIGHT_INIT_STDDEV = float(wis_tf.getText());
   println("WEIGHT_INIT_STDDEV set to " + WEIGHT_INIT_STDDEV);
 } //_CODE_:wis_tf:862046:
 
 public void quickgen_btn_click(GButton source, GEvent event) { //_CODE_:quickgen_btn:423030:
   //println("quickgen_btn - GButton >> GEvent." + event + " @ " + millis());
   if (!EVAL_MODE) {
-    println("Starting 1 quick generation...");
+    println("Starting Training...");
     SIM_START = true;
     progSetupWin.close(); // Close the window and start the simulation
   } else {
     println("ERROR: NOT IN TRAINING MODE!!!");
   }
 } //_CODE_:quickgen_btn:423030:
-
-public void slowgen_btn_click(GButton source, GEvent event) { //_CODE_:slowgen_btn:318213:
-  //println("slowgen_btn - GButton >> GEvent." + event + " @ " + millis());
-  if (!EVAL_MODE) {
-    println("Starting 1 step-by-step generation...");
-    SIM_START = true;
-    progSetupWin.close(); // Close the window and start the simulation
-  } else {
-    println("ERROR: NOT IN TRAINING MODE!!!");
-  }
-} //_CODE_:slowgen_btn:318213:
 
 
 
@@ -260,13 +253,9 @@ public void createGUI(){
   wis_tf.setOpaque(true);
   wis_tf.addEventHandler(this, "wis_tf_change");
   quickgen_btn = new GButton(progSetupWin, 14, 530, 135, 50);
-  quickgen_btn.setText("1 Quick Generation");
+  quickgen_btn.setText("Train!!");
   quickgen_btn.setLocalColorScheme(GCScheme.GREEN_SCHEME);
   quickgen_btn.addEventHandler(this, "quickgen_btn_click");
-  slowgen_btn = new GButton(progSetupWin, 158, 530, 141, 51);
-  slowgen_btn.setText("1 Step-by-Step Generation");
-  slowgen_btn.setLocalColorScheme(GCScheme.GREEN_SCHEME);
-  slowgen_btn.addEventHandler(this, "slowgen_btn_click");
   label16 = new GLabel(progSetupWin, 16, 505, 156, 20);
   label16.setText("Start Training!");
   label16.setOpaque(false);

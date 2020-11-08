@@ -34,6 +34,7 @@ class Car {
   Course course; // Course object so that we can access walls and checkpoints
   
   NeuralNet nn;
+  float fitness;
   boolean crashedFlag = false;
   
   // Visual
@@ -263,6 +264,28 @@ class Car {
       }
     }
     return false;
+  }
+  
+  void reset(Vec2f pos, Vec2f dir) {
+    // Resets the car to a position and orientation, clearing all fields
+    
+    this.fitness = 0; // Reset fitness
+    
+    // Reset position, direction
+    this.pos = pos;
+    this.dir = dir;
+    this.crashedFlag = false; // Reset crashed flag
+    
+    // Reset velocity, acceleration, steering angle
+    this.v = new Vec2f(0, 0);
+    this.a = new Vec2f(0, 0);
+    this.steeringAngle = 0;
+    
+    // Reset forces
+    this.fTraction = new Vec2f(0, 0);
+    this.fDrag = new Vec2f(0, 0);
+    this.fRR = new Vec2f(0, 0);
+    this.fBraking = new Vec2f(0, 0);
   }
   
   // Actions that the car can perform

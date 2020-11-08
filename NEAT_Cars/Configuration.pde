@@ -2,7 +2,7 @@
 // All undefined parameters will be set by the GUI
 
 // TRAINING CONSTANTS
-int POPULATION;
+int POPULATION = 1000;
 Activation DEFAULT_ACTIVATION = new Sigmoid(4.9);
 
 // Weight initialization
