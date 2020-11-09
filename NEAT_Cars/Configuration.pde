@@ -40,8 +40,9 @@ float CHANCE_INTERSPECIES = 0.0001;
 float FRAMERATE = 60;
 float DT = 1/FRAMERATE; // Seconds between frames
 boolean VISION_LINES = true; // Draw car vision lines
-boolean ASAP = false; // Disables drawing if running ASAP generation(s)
+boolean DRAW_CHECKPOINTS = true;
 boolean SIM_START = false; // Set to true when setup is finished
+String GENOME_SAVE_PATH = "model/car.xml"; // Path to save trained Genome XMLs. Set by GUI
 
 // EVAL MODE PARAMS
 boolean EVAL_MODE = false; // false => training mode

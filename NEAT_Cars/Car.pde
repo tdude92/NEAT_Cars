@@ -8,14 +8,14 @@ float CAR_MASS = 500; // kg
 float CAR_W = 10; // Car width
 float CAR_L = 20; // Car length
 float STEERING_ANGLE = 3*PI/8; // Radians
-float VISION_RANGE = 200; // pixels
+float VISION_RANGE = 500; // pixels
 
 // Adjust these to adjust car physics
 float TRACTIVE_FORCE = 8000; // N
 float DRAG_CONSTANT = 0.4257f;
 float RR_CONSTANT = DRAG_CONSTANT*30; // Rolling resistance
 float BRAKING_CONSTANT = 5000;
-float LATV_DECAY = 0.90;
+float LATV_DECAY = 0.95;
 
 // Utility
 float clamp(float x, float lower, float upper) {
@@ -34,7 +34,7 @@ class Car {
   Course course; // Course object so that we can access walls and checkpoints
   
   NeuralNet nn;
-  float fitness;
+  float fitness = 0;
   boolean crashedFlag = false;
   
   // Visual
@@ -44,6 +44,15 @@ class Car {
   
   // Holds the distance from each wall
   float[] wallDistances = new float[5]; // {0deg, -45deg, -90deg, 90deg, 45deg} if 0 deg is straight ahead and the angle increases counterclockwise
+  
+  // Index of the next checkpoint the car should be visiting
+  // Ensures that the car visits checkpoints in the correct order
+  int idxNextCheckpoint = 0;
+  
+  // Used to track the number of .update() calls on the car.
+  // If the time elapsed passes the time limit, the evaluation for this car finishes
+  // Crossing a checkpoint increases the time limit
+  int timeLimit = TIME_LIMIT*int(FRAMERATE);
   
   // The car's position
   Vec2f[] vertices = new Vec2f[4]; // {front left, front right, rear right, rear left}
@@ -90,7 +99,7 @@ class Car {
     // Steering
     if (this.steeringAngle != 0) {
       float turnRadius = CAR_L / sin(this.steeringAngle);
-      float av = this.v.magnitude() / turnRadius; // angular velocity
+      float av = 2*this.v.magnitude() / turnRadius; // angular velocity
       this.dir = this.dir.rotate(av*DT);
     }
     
@@ -132,15 +141,12 @@ class Car {
       }
     }
     
-    if (!ASAP) {
-      // Draw car, nn, and write information onto sketch
-      fill(255);
-      text(str(roundN(this.v.magnitude(), 1)) + " km/h", 1250, 200);
-      text("Action 1: " + this.state1, 1250, 220);
-      text("Action 2: " + this.state2, 1250, 240);
-      
-      this.nn.drawNN(1200, 520, 1390, 710);
-      this.draw();
+    // Update fitness (number of checkpoints crossed)
+    if (this.crashed(this.course.checkpoints[this.idxNextCheckpoint])) { // crashed lol
+      this.fitness += 1;
+      this.timeLimit += int(FRAMERATE)*0.25; // Give the .update() calls equivalent of 0.25 seconds worth of extra time
+      this.idxNextCheckpoint = (this.idxNextCheckpoint + 1) % this.course.checkpoints.length; // Use modulo to loop the counter back to
+                                                                                              // zero after crossing the last checkpoint
     }
   }
   
@@ -174,18 +180,6 @@ class Car {
         this.wallDistances[i] = nearestIntersection.sub(this.pos).magnitude() / VISION_RANGE;
       } else {
         this.wallDistances[i] = 1;
-      }
-      
-      if (!ASAP && VISION_LINES) {
-        // Draw vision lines and intersections
-        color fill = lerpColor(color(255, 100, 100), color(100, 255, 100), this.wallDistances[i]);
-        stroke(fill);
-        fill(fill);
-        line(visionLine.p1.x, visionLine.p1.y, visionLine.p2.x, visionLine.p2.y);
-        if (nearestIntersection != null) {
-          circle(nearestIntersection.x, nearestIntersection.y, 10);
-        }
-        stroke(0);
       }
     }
   }
@@ -268,8 +262,8 @@ class Car {
   
   void reset(Vec2f pos, Vec2f dir) {
     // Resets the car to a position and orientation, clearing all fields
-    
-    this.fitness = 0; // Reset fitness
+    this.fitness = 0;
+    this.idxNextCheckpoint = 0;
     
     // Reset position, direction
     this.pos = pos;
@@ -321,6 +315,41 @@ class Car {
   }
   
   void draw() {
+    // Draw car, nn, vision lines, and write information onto sketch
+    fill(255);
+    text(str(roundN(this.v.magnitude(), 1)) + " km/h", 1200, 200);
+    text("Fitness: " + str(roundN(this.fitness, 2)), 1200, 220);
+    text("Action 1: " + this.state1, 1200, 240);
+    text("Action 2: " + this.state2, 1200, 260);
+    
+    this.nn.drawNN(1200, 520, 1390, 710);
+    
+    // Draw vision lines
+    LineSegment[] visionLines = {
+      new LineSegment(this.pos, this.pos.add(this.dir.scale(VISION_RANGE))),
+      new LineSegment(this.pos, this.pos.add(this.dir.rotate(PI/4).scale(VISION_RANGE))),
+      new LineSegment(this.pos, this.pos.add(this.dir.rotate(PI/2).scale(VISION_RANGE))),
+      new LineSegment(this.pos, this.pos.add(this.dir.rotate(-PI/2).scale(VISION_RANGE))),
+      new LineSegment(this.pos, this.pos.add(this.dir.rotate(-PI/4).scale(VISION_RANGE)))
+    };
+    if (VISION_LINES) {
+      for (int i = 0; i < visionLines.length; ++i) {
+        LineSegment line = visionLines[i];
+        float distance = this.wallDistances[i];
+        
+        color fillCol = lerpColor(color(255, 100, 100), color(100, 255, 100), distance);
+        stroke(fillCol);
+        fill(fillCol);
+        line(line.p1.x, line.p1.y, line.p2.x, line.p2.y);
+        
+        if (distance < 1) {
+          Vec2f circleCenter = line.p1.add(line.p2.sub(line.p1).direction().scale(distance*VISION_RANGE));
+          circle(circleCenter.x, circleCenter.y, 10);
+        }
+      }
+      stroke(0); // Reset stroke to black
+    }
+    
     fill(this.colour);
     quad(
       this.vertices[0].x, this.vertices[0].y,
