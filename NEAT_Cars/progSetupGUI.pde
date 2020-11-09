@@ -129,7 +129,7 @@ public void quickgen_btn_click(GButton source, GEvent event) { //_CODE_:quickgen
     
     // Initialize evaluator
     eval = new Evaluator(POPULATION, DEFAULT_ACTIVATION);
-    eval.initPopulation(6, 6);
+    eval.initPopulation(5, 2);
     
     SIM_START = true;
     progSetupWin.close(); // Close the window and start the simulation

@@ -15,7 +15,7 @@ float TRACTIVE_FORCE = 8000; // N
 float DRAG_CONSTANT = 0.4257f;
 float RR_CONSTANT = DRAG_CONSTANT*30; // Rolling resistance
 float BRAKING_CONSTANT = 5000;
-float LATV_DECAY = 0.95;
+float LATV_DECAY = 0.93;
 
 // Utility
 float clamp(float x, float lower, float upper) {
@@ -36,6 +36,7 @@ class Car {
   NeuralNet nn;
   float fitness = 0;
   boolean crashedFlag = false;
+  boolean lapCompleted = false;
   
   // Visual
   int colour;
@@ -52,6 +53,7 @@ class Car {
   // Used to track the number of .update() calls on the car.
   // If the time elapsed passes the time limit, the evaluation for this car finishes
   // Crossing a checkpoint increases the time limit
+  int timer = 0;
   int timeLimit = TIME_LIMIT*int(FRAMERATE);
   
   // The car's position
@@ -99,7 +101,7 @@ class Car {
     // Steering
     if (this.steeringAngle != 0) {
       float turnRadius = CAR_L / sin(this.steeringAngle);
-      float av = 2*this.v.magnitude() / turnRadius; // angular velocity
+      float av = this.v.magnitude() / turnRadius; // angular velocity
       this.dir = this.dir.rotate(av*DT);
     }
     
@@ -144,10 +146,16 @@ class Car {
     // Update fitness (number of checkpoints crossed)
     if (this.crashed(this.course.checkpoints[this.idxNextCheckpoint])) { // crashed lol
       this.fitness += 1;
-      this.timeLimit += int(FRAMERATE)*0.25; // Give the .update() calls equivalent of 0.25 seconds worth of extra time
-      this.idxNextCheckpoint = (this.idxNextCheckpoint + 1) % this.course.checkpoints.length; // Use modulo to loop the counter back to
-                                                                                              // zero after crossing the last checkpoint
+      this.timeLimit += round(FRAMERATE*0.75); // Give the .update() calls equivalent of 0.75 seconds worth of extra time
+      this.idxNextCheckpoint++;
+      if (this.idxNextCheckpoint == this.course.checkpoints.length) {
+        // If in training mode, end the evaluation when a lap is completed
+        this.lapCompleted = true;
+        this.idxNextCheckpoint = 0;
+      }
     }
+    
+    timer++; // Increment timer
   }
   
   void scanWalls() {
@@ -186,63 +194,33 @@ class Car {
   
   void performAction() {
     // Poll the nn for an action to perform
-    // NN INPUT: {FRONT, FRONT RIGHT, RIGHT, LEFT, FRONT LEFT, VELOCITY} <-- velocity is normalized between 1 and 0 using max speed
-    // NN OUTPUT: {GAS, BRAKE, CRUISE, LEFT, RIGHT, STRAIGHT}
-    // NOTE: Softmax is applied once to gas, brake, cruise, and once to left, right, straight.
-    //       The neural net makes two decisions at once: one on gas/brake/cruise and one on turning
-
-    float maxSpeed = (-RR_CONSTANT + sqrt(pow(RR_CONSTANT, 2) + 4*TRACTIVE_FORCE*DRAG_CONSTANT))/(2*DRAG_CONSTANT); // Find top speed by using the quadratic
-                                                                                                                    // formula to solve for the zeros of
-                                                                                                                    // a = (TRACTIVE_FORCE - RR_CONSTANT*v - DRAG_CONSTANT*v^2)/CAR_MASS
+    // NN INPUT: {FRONT, FRONT RIGHT, RIGHT, LEFT, FRONT LEFT}
+    // NN OUTPUT: {GAS, STEERING}
     float[] nnInput = {
       this.wallDistances[0],
       this.wallDistances[1],
       this.wallDistances[2],
       this.wallDistances[3],
-      this.wallDistances[4],
-      this.v.magnitude() / maxSpeed
+      this.wallDistances[4]
     };
     
     float[] logits = this.nn.forward(nnInput);
-    float[] decision1 = {logits[0], logits[1], logits[2]}; // gas/brake/cruise
-    float[] decision2 = {logits[0], logits[1], logits[2]}; // left/right/straight
     
-    // Appply softmax to get probabilities for each decision
-    decision1 = softmax(decision1);
-    decision2 = softmax(decision2);
+    // Transform logits to be a sigmoid function between -1 and 1
+    // Round the logits to -1, 0, or 1, since there are three possible choices for each decision
+    int aLong = round(2*logits[0] - 1); // brake/cruise/drive (a stands for action)
+    int aLat  = round(2*logits[1] - 1); // left/straight/right
     
-    // Decision 1
-    // Find the output with the highest probability
-    float max = decision1[0];
-    int idxMax = 0;
-    for (int idx = 1; idx < decision1.length; ++idx) {
-      if (decision1[idx] > max) {
-        max = decision1[idx];
-        idxMax = idx;
-      }
+    switch (aLong) {
+      case -1: this.brake();  break;
+      case  0: this.cruise(); break;
+      case  1: this.gas();    break;
     }
     
-    switch (idxMax) {
-      case 0: this.gas();    break;
-      case 1: this.brake();  break;
-      case 2: this.cruise(); break;
-    }
-    
-    // Decision 2
-    // Find the output with the highest probability
-    max = decision2[0];
-    idxMax = 0;
-    for (int idx = 1; idx < decision2.length; ++idx) {
-      if (decision2[idx] > max) {
-        max = decision2[idx];
-        idxMax = idx;
-      }
-    }
-    
-    switch (idxMax) {
-      case 0: this.steerLeft();  break;
-      case 1: this.steerRight(); break;
-      case 2: this.straight();   break;
+    switch (aLat) {
+      case -1: this.steerLeft();  break;
+      case  0: this.straight();   break;
+      case  1: this.steerRight(); break;
     }
   }
   
@@ -261,13 +239,17 @@ class Car {
   }
   
   void reset(Vec2f pos, Vec2f dir) {
-    // Resets the car to a position and orientation, clearing all fields
+    // Resets the car to a position and orientation, clearing/resetting all fields
     this.fitness = 0;
+    this.timer = 0;
+    this.timeLimit = TIME_LIMIT*int(FRAMERATE);
+    this.lapCompleted = false;
     this.idxNextCheckpoint = 0;
     
     // Reset position, direction
     this.pos = pos;
     this.dir = dir;
+    
     this.crashedFlag = false; // Reset crashed flag
     
     // Reset velocity, acceleration, steering angle
@@ -317,7 +299,8 @@ class Car {
   void draw() {
     // Draw car, nn, vision lines, and write information onto sketch
     fill(255);
-    text(str(roundN(this.v.magnitude(), 1)) + " km/h", 1200, 200);
+    text(str(roundN(this.timer/FRAMERATE, 2)) + " sec", 1200, 180);
+    text(str(roundN(this.v.magnitude()*3.6/5, 1)) + " km/h", 1200, 200);
     text("Fitness: " + str(roundN(this.fitness, 2)), 1200, 220);
     text("Action 1: " + this.state1, 1200, 240);
     text("Action 2: " + this.state2, 1200, 260);

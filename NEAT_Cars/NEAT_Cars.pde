@@ -5,7 +5,8 @@ import g4p_controls.*;
 // Car starting position and direction
 Vec2f CAR_POS = new Vec2f(500, 300);
 Vec2f CAR_DIR = new Vec2f(1, 0);
-int TIME_LIMIT = 5; // Number of seconds each car gets during training
+int TIME_LIMIT = 2; // Number of seconds each car gets during training
+float W_LAPTIME = 10; // The weight of lap time in fitness calculations
 
 // Global variables
 Evaluator eval;
@@ -79,17 +80,20 @@ void trainGeneration() {
   // Train one full generation without drawing
   NeuralNet[] nns = eval.getNeuralNets();
   for (int i = 0; i < nns.length; ++i) {
-    println("Evaluating Individual no.", i + 1);
+    //println("Evaluating Individual no.", i + 1);
     NeuralNet nn = nns[i];
     
     car.reset(CAR_POS, CAR_DIR);
     car.nn = nn;
     
-    int timer = 0;
-    while (!car.crashedFlag && timer < car.timeLimit) {
+    while (!car.crashedFlag && car.timer < car.timeLimit && !car.lapCompleted) {
       // Simulate the car driving
       car.update();
-      timer++;
+    }
+    
+    if (car.lapCompleted) {
+      // If the car completed a lap, factor in lap time to fitness
+      car.fitness += 1/(car.timer/FRAMERATE)*W_LAPTIME;
     }
     
     nn.genome.fitness = car.fitness; // Update the genome's fitness
