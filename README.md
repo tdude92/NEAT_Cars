@@ -1,13 +1,15 @@
 # NEAT_Cars
     
-  For some time, I’ve been interested in deep learning through backpropagation & gradient descent. Although not as popular as the previously mentioned method, I think it’s really cool how  genetic algorithms incorporate concepts from biology into a method of computation. So I decided to create some sort of artificial intelligence project that uses a genetic algorithm to evolve artificial neural networks.
+  For some time, I’ve been interested in deep learning through backpropagation & gradient descent. Although not as popular as the previously mentioned method, I think it’s really cool how genetic algorithms incorporate concepts from biology into a method of computation. So I decided to create some sort of artificial intelligence project that uses a genetic algorithm to evolve artificial neural networks.
 
-  With all of the enthusiasm around Tesla and their self-driving cars, it felt fitting for the ANNs to be trained to drive simulated two-dimensional cars.
+  I'm a Tesla fanboy so it's about cars.
 
 
-**Goal:** Use NEAT to evolve artificial neural networks that have the ability to perform three driving tasks.
-1. Steer a car around a curved course.
-2. Park a car in a specific position & orientation.
+**Goal:** Use NEAT to evolve artificial neural networks that have the ability to steer a 2D car around curved courses.
+
+![KAnsei Dorifto??](https://raw.githubusercontent.com/tdude92/NEAT_Cars/main/car_drive_demo.gif)
+![Interface Demo](https://raw.githubusercontent.com/tdude92/NEAT_Cars/main/gensummary_demo.png)
 
 
 NEAT Paper: http://nn.cs.utexas.edu/downloads/papers/stanley.ec02.pdf
+Car Physics: https://asawicki.info/Mirror/Car%20Physics%20for%20Games/Car%20Physics%20for%20Games.html (My implementation is sketchy)
