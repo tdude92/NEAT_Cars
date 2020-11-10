@@ -8,6 +8,7 @@
 **Goal:** Use NEAT to evolve artificial neural networks that have the ability to steer a 2D car around curved courses.
 
 ![KAnsei Dorifto??](https://raw.githubusercontent.com/tdude92/NEAT_Cars/main/car_drive_demo.gif)
+
 ![Interface Demo](https://raw.githubusercontent.com/tdude92/NEAT_Cars/main/gensummary_demo.png)
 
 
