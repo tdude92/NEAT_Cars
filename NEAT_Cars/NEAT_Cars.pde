@@ -6,7 +6,7 @@ import g4p_controls.*;
 Vec2f CAR_POS = new Vec2f(500, 300);
 Vec2f CAR_DIR = new Vec2f(1, 0);
 int TIME_LIMIT = 2; // Number of seconds each car gets during training
-float W_LAPTIME = 1; // The weight of lap time in fitness calculations
+float W_LAPTIME = 8; // The weight of lap time in fitness calculations
 
 // Global variables
 Evaluator eval;
@@ -16,7 +16,7 @@ Car car;
 NeuralNet bestNN, medianNN, worstNN; // These are global so that NeuralNet.nodePos isn't recomputed every
                                      // time drawGenerationSummary() is called
 
-Histogram fitnessDist = new Histogram("Fitness", "No. Individuals", 20, 360, 470, 670, 12, 30, 3);
+Histogram fitnessDist = new Histogram("Fitness", "No. Individuals", 20, 360, 470, 670, 12, 30, 8);
 PieChart speciesChart = new PieChart(715, 515, 160);
 
 void setup() {
@@ -30,7 +30,8 @@ void setup() {
   frameRate(FRAMERATE);
   
   // Set up course and car (Evaluator set up in the START TRAINING button callback)
-  course = new Course(COURSE_WALLS, CHECKPOINTS);
+  course = new Course();
+  course.load(TRACK_FILE_PATH);
   car = new Car(CAR_POS, CAR_DIR, course, color(255, 0, 0));
   
   while (!SIM_START) {print();} // Wait until setup is complete
@@ -38,6 +39,7 @@ void setup() {
   if (EVAL_MODE) {
     // If the program is in eval mode, load the user-selected genome into the car once
     car.nn = new NeuralNet(EVAL_GENOME, new Sigmoid(4.9));
+    car.reset(CAR_POS, CAR_DIR);
   }
 }
 
@@ -99,7 +101,7 @@ void trainGeneration() {
     
     if (car.lapCompleted) {
       // If the car completed a lap, factor in lap time to fitness
-      car.fitness += 1/(car.timer/FRAMERATE - 8)*W_LAPTIME;
+      car.fitness += abs(1/(car.timer/FRAMERATE - 8)*W_LAPTIME);
     }
     
     nn.genome.fitness = car.fitness; // Update the genome's fitness

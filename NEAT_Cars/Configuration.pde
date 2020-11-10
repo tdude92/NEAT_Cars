@@ -18,11 +18,11 @@ float WEIGHT_MUTATION_CHANCE = 0.8;  // Chance of weight mutating in offspring.
 float PERTURBATION_BOUND = 0.2; // Bounds of the random perturbation (-bound <= perturb < bound). Should be > 0.
 
 // Genome comparison weights
-float CW_E = 1.0; // Weight of excess genes.
-float CW_D = 1.0; // Weight of disjoint genes.
-float CW_DW = 0.4; // Weight of average weight difference of matching genes.
+float CW_E = 1.4; // Weight of excess genes.
+float CW_D = 1.4; // Weight of disjoint genes.
+float CW_DW = 0.8; // Weight of average weight difference of matching genes.
 
-float COMPATABILITY_THRESHOLD = 1.0; // Maximum compatability between two genomes while still being considered the same species.
+float COMPATABILITY_THRESHOLD = 1.5; // Maximum compatability between two genomes while still being considered the same species.
 
 // Natural selection and reproduction
 float CULL_PERCENT = 0.25; // Percentage of the population that is not allowed to reproduce at the end of a generation.
@@ -41,6 +41,7 @@ boolean DRAW_CHECKPOINTS = true;
 boolean TRAIN_INDEF = false; // Set in the generation summary. Generation summary doesn't wait for user if true.
 boolean SIM_START = false; // Set to true when setup is finished
 String GENOME_SAVE_PATH = "model/car.xml"; // Path to save trained Genome XMLs. Set by GUI
+String TRACK_FILE_PATH = "racetracks/easy_tck.txt";
 
 // EVAL MODE PARAMS
 boolean EVAL_MODE = false; // false => training mode

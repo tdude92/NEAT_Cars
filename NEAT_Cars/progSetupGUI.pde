@@ -25,12 +25,17 @@ synchronized public void drawProgSetup(PApplet appc, GWinData data) { //_CODE_:p
 public void progMode_dl_click(GDropList source, GEvent event) { //_CODE_:progMode_dl:222692:
   //println("progMode_dl - GDropList >> GEvent." + event + " @ " + millis());
   if (progMode_dl.getSelectedIndex() == 0) {
-    EVAL_MODE = false;
-    println("Program set to training mode.");
-  } else {
-    EVAL_MODE = true;
-    println("Program set to evaluation mode.");
+    println("Course set to easy_tck.txt");
+    CAR_POS = new Vec2f(500, 300);
+    CAR_DIR = new Vec2f(1, 0);
+    TRACK_FILE_PATH = "racetracks/easy_tck.txt";
+  } else if (progMode_dl.getSelectedIndex() == 1) {
+    println("Course set to hardhairpins_tck.txt");
+    CAR_POS = new Vec2f(100, 100);
+    CAR_DIR = new Vec2f(0, 1);
+    TRACK_FILE_PATH = "racetracks/hardhairpins_tck.txt";
   }
+  course.load(TRACK_FILE_PATH);
 } //_CODE_:progMode_dl:222692:
 
 public void xmlFile_tf_change(GTextField source, GEvent event) { //_CODE_:xmlFile_tf:276638:
@@ -40,15 +45,14 @@ public void xmlFile_tf_change(GTextField source, GEvent event) { //_CODE_:xmlFil
 
 public void loadXML_btn_click(GButton source, GEvent event) { //_CODE_:loadXML_btn:445140:
   //println("loadXML_btn - GButton >> GEvent." + event + " @ " + millis());
-  if (EVAL_MODE) {
-    String genomeXMLPath = xmlFile_tf.getText();
-    println("Loading " + genomeXMLPath + " and starting simulation...");
-    EVAL_GENOME = new Genome(genomeXMLPath);
-    SIM_START = true;
-    progSetupWin.close(); // Close the window and start the simulation
-  } else {
-    println("ERROR: NOT IN EVAL MODE!!!");
-  }
+  EVAL_MODE = true;
+
+  String genomeXMLPath = xmlFile_tf.getText();
+  println("Loading " + genomeXMLPath + " and starting simulation...");
+  EVAL_GENOME = new Genome(genomeXMLPath);
+  SIM_START = true;
+  progSetupWin.close(); // Close the window and start the simulation
+
 } //_CODE_:loadXML_btn:445140:
 
 public void pop_tf_change(GTextField source, GEvent event) { //_CODE_:pop_tf:833161:
@@ -118,24 +122,21 @@ public void wis_tf_change(GTextField source, GEvent event) { //_CODE_:wis_tf:862
 
 public void quickgen_btn_click(GButton source, GEvent event) { //_CODE_:quickgen_btn:423030:
   //println("quickgen_btn - GButton >> GEvent." + event + " @ " + millis());
-  if (!EVAL_MODE) {
-    println("Starting Training...");
-    
-    // Ensure that GENOME_SAVE_PATH is valid
-    if (GENOME_SAVE_PATH.indexOf(".") == -1 || !GENOME_SAVE_PATH.substring(GENOME_SAVE_PATH.indexOf(".")).equals(".xml")) {
-      println("ERROR: Ensure that the genome save path is a valid xml file name");
-      return;
-    }
-    
-    // Initialize evaluator
-    eval = new Evaluator(POPULATION, DEFAULT_ACTIVATION);
-    eval.initPopulation(5, 2);
-    
-    SIM_START = true;
-    progSetupWin.close(); // Close the window and start the simulation
-  } else {
-    println("ERROR: NOT IN TRAINING MODE!!!");
+  EVAL_MODE = false;
+  println("Starting Training...");
+  
+  // Ensure that GENOME_SAVE_PATH is valid
+  if (GENOME_SAVE_PATH.indexOf(".") == -1 || !GENOME_SAVE_PATH.substring(GENOME_SAVE_PATH.indexOf(".")).equals(".xml")) {
+    println("ERROR: Ensure that the genome save path is a valid xml file name");
+    return;
   }
+  
+  // Initialize evaluator
+  eval = new Evaluator(POPULATION, DEFAULT_ACTIVATION);
+  eval.initPopulation(5, 2);
+  
+  SIM_START = true;
+  progSetupWin.close(); // Close the window and start the simulation
 } //_CODE_:quickgen_btn:423030:
 
 public void xmlSavePath_tf_change(GTextField source, GEvent event) {
@@ -154,8 +155,8 @@ public void createGUI(){
   progSetupWin.noLoop();
   progSetupWin.setActionOnClose(G4P.CLOSE_WINDOW);
   progSetupWin.addDrawHandler(this, "drawProgSetup");
-  label1 = new GLabel(progSetupWin, 9, 155, 369, 20);
-  label1.setText("NEAT Training Settings (BEFORE TRAINING)");
+  label1 = new GLabel(progSetupWin, 9, 155, 450, 20);
+  label1.setText("NEAT Training Settings (Defaults are the Recommended Settings)");
   label1.setOpaque(false);
   
   // I added this one in myself because the builder broke.. shhh
@@ -168,7 +169,7 @@ public void createGUI(){
   progMode_dl.setItems(loadStrings("list_222692"), 0);
   progMode_dl.addEventHandler(this, "progMode_dl_click");
   label2 = new GLabel(progSetupWin, 12, 14, 143, 20);
-  label2.setText("Program Mode");
+  label2.setText("Racetrack");
   label2.setOpaque(false);
   label3 = new GLabel(progSetupWin, 12, 90, 356, 20);
   label3.setText("NN Eval Settings (Only works in Eval Mode)");
@@ -229,7 +230,7 @@ public void createGUI(){
   label9.setText("Weight Mutation Intensity");
   label9.setOpaque(false);
   wd_tf = new GTextField(progSetupWin, 352, 239, 120, 18, G4P.SCROLLBARS_NONE);
-  wd_tf.setText("1.0");
+  wd_tf.setText("1.4");
   wd_tf.setOpaque(true);
   wd_tf.addEventHandler(this, "wd_tf_change");
   label10 = new GLabel(progSetupWin, 200, 214, 158, 20);
@@ -239,11 +240,11 @@ public void createGUI(){
   label11.setText("Weight of Disjoints");
   label11.setOpaque(false);
   we_tf = new GTextField(progSetupWin, 352, 260, 120, 16, G4P.SCROLLBARS_NONE);
-  we_tf.setText("1.0");
+  we_tf.setText("1.4");
   we_tf.setOpaque(true);
   we_tf.addEventHandler(this, "we_tf_change");
   wdw_tf = new GTextField(progSetupWin, 352, 279, 120, 16, G4P.SCROLLBARS_NONE);
-  wdw_tf.setText("0.4");
+  wdw_tf.setText("0.8");
   wdw_tf.setOpaque(true);
   wdw_tf.addEventHandler(this, "wdw_tf_change");
   label12 = new GLabel(progSetupWin, 206, 258, 135, 20);
@@ -256,7 +257,7 @@ public void createGUI(){
   label5.setText("Compatability Thresh.");
   label5.setOpaque(false);
   ct_tf = new GTextField(progSetupWin, 352, 298, 120, 17, G4P.SCROLLBARS_NONE);
-  ct_tf.setText("1.0");
+  ct_tf.setText("1.5");
   ct_tf.setOpaque(true);
   ct_tf.addEventHandler(this, "ct_tf_change");
   label14 = new GLabel(progSetupWin, 15, 265, 148, 20);
