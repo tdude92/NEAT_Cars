@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<genome>
+  <node-genes>
+    <node-gene id="0" order="0" type="sen"/>
+    <node-gene id="1" order="1" type="sen"/>
+    <node-gene id="2" order="2" type="sen"/>
+    <node-gene id="3" order="3" type="sen"/>
+    <node-gene id="4" order="4" type="sen"/>
+    <node-gene id="5" order="5" type="sen"/>
+    <node-gene id="6" order="6" type="out"/>
+    <node-gene id="8" order="7" type="hid"/>
+    <node-gene id="7" order="8" type="out"/>
+  </node-genes>
+  <conn-genes>
+    <conn-gene enable="1" in="0" innovation="0" out="6" weight="1.7214625"/>
+    <conn-gene enable="1" in="0" innovation="1" out="7" weight="-1.9475504"/>
+    <conn-gene enable="1" in="1" innovation="2" out="6" weight="3.3635132"/>
+    <conn-gene enable="1" in="1" innovation="3" out="7" weight="0.88808143"/>
+    <conn-gene enable="1" in="2" innovation="4" out="6" weight="-2.2960696"/>
+    <conn-gene enable="1" in="2" innovation="5" out="7" weight="1.8648111"/>
+    <conn-gene enable="1" in="3" innovation="6" out="6" weight="2.1902542"/>
+    <conn-gene enable="1" in="3" innovation="7" out="7" weight="0.2019028"/>
+    <conn-gene enable="1" in="4" innovation="8" out="6" weight="-0.08299422"/>
+    <conn-gene enable="1" in="4" innovation="9" out="7" weight="-0.78752565"/>
+    <conn-gene enable="1" in="5" innovation="10" out="6" weight="-1.1639636"/>
+    <conn-gene enable="1" in="5" innovation="11" out="7" weight="-1.2554628"/>
+    <conn-gene enable="1" in="2" innovation="12" out="8" weight="2.279948"/>
+    <conn-gene enable="1" in="8" innovation="13" out="7" weight="2.852664"/>
+    <conn-gene enable="1" in="5" innovation="63" out="8" weight="-1.524999"/>
+    <conn-gene enable="1" in="3" innovation="72" out="8" weight="-1.0873396"/>
+    <conn-gene enable="1" in="1" innovation="580" out="8" weight="1.0676917"/>
+    <conn-gene enable="1" in="4" innovation="608" out="8" weight="-0.36376822"/>
+    <conn-gene enable="1" in="0" innovation="920" out="8" weight="-0.6401578"/>
+  </conn-genes>
+</genome>

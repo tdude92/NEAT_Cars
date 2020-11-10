@@ -6,12 +6,18 @@ import g4p_controls.*;
 Vec2f CAR_POS = new Vec2f(500, 300);
 Vec2f CAR_DIR = new Vec2f(1, 0);
 int TIME_LIMIT = 2; // Number of seconds each car gets during training
-float W_LAPTIME = 10; // The weight of lap time in fitness calculations
+float W_LAPTIME = 1; // The weight of lap time in fitness calculations
 
 // Global variables
 Evaluator eval;
 Course course;
 Car car;
+
+NeuralNet bestNN, medianNN, worstNN; // These are global so that NeuralNet.nodePos isn't recomputed every
+                                     // time drawGenerationSummary() is called
+
+Histogram fitnessDist = new Histogram("Fitness", "No. Individuals", 20, 360, 470, 670, 12, 30, 3);
+PieChart speciesChart = new PieChart(715, 515, 160);
 
 void setup() {
   // Uncomment any one of these tests to try the tests I used during development
@@ -20,7 +26,7 @@ void setup() {
 
   // SKETCH SETUP
   createGUI();
-  size(1400, 720);
+  size(1250, 720);
   frameRate(FRAMERATE);
   
   // Set up course and car (Evaluator set up in the START TRAINING button callback)
@@ -48,7 +54,7 @@ void draw() {
     
     drawGenerationSummary();
   } else if (car.nn != null) {
-    // When we want to draw a car to the screen, we load an nn into car.nn
+    // When we want to draw a car to the screen, we load a NeuralNet into car.nn
     // before going into the draw function
     background(0);
     car.update(); // Update the car
@@ -62,9 +68,9 @@ void draw() {
     
     fill(255);
     if (!EVAL_MODE) {
-      text("Press 'q' to go back to the Generation Summary", 980, 20);
+      text("Press 'q' to go back to the Generation Summary", 10, 20);
     } else {
-      text("Press 'q' to exit the simulation", 980, 20);
+      text("Press 'q' to exit the simulation", 10, 20);
     }
     if (keyPressed && key == 'q') {
       // Also end the run when escape is pressed
@@ -93,7 +99,7 @@ void trainGeneration() {
     
     if (car.lapCompleted) {
       // If the car completed a lap, factor in lap time to fitness
-      car.fitness += 1/(car.timer/FRAMERATE)*W_LAPTIME;
+      car.fitness += 1/(car.timer/FRAMERATE - 8)*W_LAPTIME;
     }
     
     nn.genome.fitness = car.fitness; // Update the genome's fitness
@@ -102,8 +108,21 @@ void trainGeneration() {
   // Update the population after all genomes have been evaluated
   eval.updatePopulation();
   car.nn = null; // Reset car.nn to null so that we stay in the generationSummary
-  SIM_START = false; // Pause the simulation
+  
+  if (!TRAIN_INDEF) {
+    SIM_START = false; // Pause the simulation and enter the generationSummary
+  } else {
+    // Save the best genome automatically
+    eval.bestGenome.writeGenome(GENOME_SAVE_PATH);
+    println("Best genome saved to " + GENOME_SAVE_PATH);
+  }
+  
+  // Set the best, median, and worst neural nets
+  bestNN = new NeuralNet(eval.bestGenome, new Sigmoid(4.9));
+  medianNN = new NeuralNet(eval.medianGenome, new Sigmoid(4.9));
+  worstNN = new NeuralNet(eval.worstGenome, new Sigmoid(4.9));
 }
+
 
 void drawGenerationSummary() {
   // Display information about the completed generation.
@@ -115,74 +134,91 @@ void drawGenerationSummary() {
   text("Generation " + str(eval.generation), 20, 60);
   
   // Display best, median, worst genomes
-  textSize(18);
+  textSize(12);
   
   fill(255);
   rect(20, 100, 300, 200);
   text("Best Genome", 20, 320);
   text("Fitness: " + eval.bestGenome.rawFitness, 20, 340);
-  new NeuralNet(eval.bestGenome, DEFAULT_ACTIVATION).drawNN(40, 120, 300, 280);
+  bestNN.drawNN(40, 120, 300, 280);
   
   fill(255);
   rect(340, 100, 300, 200);
   text("Median Genome", 340, 320);
   text("Fitness: " + eval.medianGenome.rawFitness, 340, 340);
-  new NeuralNet(eval.medianGenome, DEFAULT_ACTIVATION).drawNN(360, 120, 620, 280);
+  medianNN.drawNN(360, 120, 620, 280);
   
   fill(255);
   rect(660, 100, 300, 200);
   text("Worst Genome", 660, 320);
   text("Fitness: " + eval.worstGenome.rawFitness, 660, 340);
-  new NeuralNet(eval.worstGenome, DEFAULT_ACTIVATION).drawNN(680, 120, 940, 280);
+  worstNN.drawNN(680, 120, 940, 280);
   
-  // Graphical data
-  new Histogram(20, 360, 470, 670);
+  fill(255);
+  text("Try clicking on one\nof the neural nets!", 1000, 120);
+  
+  // Update graphs
+  fitnessDist.draw(eval);
+  fill(255);
+  textAlign(BOTTOM, LEFT);
   text("Fitness Distribution", 20, 690);
   
-  new AreaChart(490, 360, 960, 670);
+  speciesChart.draw(eval);
+  fill(255);
+  textAlign(BOTTOM, LEFT);
   text("Species Populations", 490, 690);
   
   // BUTTONS
-  textSize(32);
+  textSize(24);
   textAlign(CENTER, CENTER);
   
   // Button colours change if the mouse is hovering over it
   color nextGenerationCol = color(100, 255, 100);
+  color trainIndefCol = color(100, 255, 100);
   color saveBestGenomeCol = color(255, 165, 0);
   color endTrainingCol = color(255, 100, 100);
   
   // Check if the mouse is within the bounds of each button
-  if (1000 < mouseX && mouseX < 1380 && 600 < mouseY && mouseY < 700) {
+  if (1000 < mouseX && mouseX < 1230 && 600 < mouseY && mouseY < 700) {
     // Check "Next Generation" button
     nextGenerationCol = color(200, 255, 200);
-  } else if (1000 < mouseX && mouseX < 1380 && 480 < mouseY && mouseY < 580) {
+  } else if (1000 < mouseX && mouseX < 1230 && 480 < mouseY && mouseY < 580) {
+    // Check "Train Indefinitely" button
+    trainIndefCol = color(200, 255, 200);
+  } else if (1000 < mouseX && mouseX < 1230 && 360 < mouseY && mouseY < 460) {
     // Check "Save Best Genome" button
     saveBestGenomeCol = color(255, 255, 200);
-  } else if (1000 < mouseX && mouseX < 1380 && 360 < mouseY && mouseY < 460) {
+  } else if (1000 < mouseX && mouseX < 1230 && 210 < mouseY && mouseY < 310) {
     // Check "End Training" button
     endTrainingCol = color(255, 200, 200);
   }
 
   // Start next generation
   fill(nextGenerationCol);
-  rect(1000, 600, 380, 100);
+  rect(1000, 570, 230, 100);
   fill(50, 127, 50);
-  text("Next Generation", 1190, 650);
+  text("Next Generation", 1115, 620);
+  
+  // Train indefinitely
+  fill(trainIndefCol);
+  rect(1000, 450, 230, 100);
+  fill(50, 127, 50);
+  text("Train Indefinitely", 1115, 500);
   
   // Save Best Genome
   fill(saveBestGenomeCol);
-  rect(1000, 480, 380, 100);
+  rect(1000, 330, 230, 100);
   fill(127, 82, 0);
-  text("Save Best Genome", 1190, 530);
+  text("Save Best Genome", 1115, 380);
   
   // Stop training
   fill(endTrainingCol);
-  rect(1000, 360, 380, 100);
+  rect(1000, 210, 230, 100);
   fill(127, 50, 50);
-  text("End Training", 1190, 410);
+  text("End Training", 1115, 260);
   
   // Reset text size and text align
-  textSize(18);
+  textSize(12);
   textAlign(LEFT, UP);
 }
 
@@ -192,14 +228,18 @@ void mousePressed() {
     // If the program is in training mode and car.nn is null, the
     // program is currently in the generation summary
     
-    if (1000 < mouseX && mouseX < 1380 && 600 < mouseY && mouseY < 700) {
+    if (1000 < mouseX && mouseX < 1230 && 600 < mouseY && mouseY < 700) {
       // "Next Generation" button clicked
       SIM_START = true;
-    } else if (1000 < mouseX && mouseX < 1380 && 480 < mouseY && mouseY < 580) {
+    } else if (1000 < mouseX && mouseX < 1230 && 480 < mouseY && mouseY < 580) {
+      // "Train Indefinitely" button clicked
+      SIM_START = true;
+      TRAIN_INDEF = true;
+    } else if (1000 < mouseX && mouseX < 1230 && 360 < mouseY && mouseY < 460) {
       // "Save Best Genome" button clicked
       eval.bestGenome.writeGenome(GENOME_SAVE_PATH);
       println("Best genome saved to " + GENOME_SAVE_PATH);
-    } else if (1000 < mouseX && mouseX < 1380 && 360 < mouseY && mouseY < 460) {
+    } else if (1000 < mouseX && mouseX < 1230 && 210 < mouseY && mouseY < 310) {
       // "End Training" button clicked
       exit();
     } else if (20 < mouseX && mouseX < 320 && 100 < mouseY && mouseY < 300) {

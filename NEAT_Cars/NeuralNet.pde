@@ -57,6 +57,8 @@ class NeuralNet {
   Activation activation; // Activation function used in the nn
   Genome genome; // Reference to the genome used to construct this nn
   
+  HashMap<Node, Vec2f> nodePos; // Positions to draw nodes on screen
+  
   ArrayList<Node> input = new ArrayList<Node>();    // List of input nodes
   ArrayList<Node> output = new ArrayList<Node>();   // List of output nodes
   ArrayList<Node> nodes = new ArrayList<Node>();   // All nodes in topological order
@@ -233,9 +235,12 @@ class NeuralNet {
       println("} -> " + str(node.gene.id) + " [" + node.gene.type.str + "]");
     }
   }
-
+  
   void drawNN(float x1, float y1, float x2, float y2) {
     // Args are the top left and bottom right corners of the bounding box of the drawing
+    if (this.nodePos == null) {
+      this.computeNodePos(x1, y1, x2, y2);
+    }
     
     float nodeRadius = 10;
     
@@ -243,65 +248,65 @@ class NeuralNet {
     color posColour = color(100, 255, 100);
     color negColour = color(255, 100, 100);
     
-    // Hashmap that maps nodes to their x, y positions. Used for drawing connections between nodes.
-    HashMap<Node, Vec2f> nodePos = new HashMap<Node, Vec2f>();
+    // Draw nodes and their connections
+    for (int i = this.nodes.size() - 1; i >= 0; --i) {
+      Node node = this.nodes.get(i);
+      Vec2f pos = this.nodePos.get(node);
+      
+      // Draw incoming connections
+      for (int j = 0; j < node.inNodes.size(); ++j) {
+        Node inNode = node.inNodes.get(j);
+        Vec2f inNodePos = this.nodePos.get(inNode);
+        float weight = node.weights.get(j);
+        
+        // Pick colour for the connections
+        if (abs(weight) < 0.05) {
+          stroke(lerpColor(negColour, posColour, 0.5));
+        } else if (weight > 0) {
+          stroke(100, 255, 100);
+        } else if (weight < 0) {
+          stroke(255, 100, 100);
+        }
+        
+        // Draw connection
+        line(pos.x, pos.y, inNodePos.x, inNodePos.y);
+      }
+      stroke(0); // Reset stroke to black
+      
+      // Draw node
+      fill(lerpColor(negColour, posColour, node.value));
+      circle(pos.x, pos.y, nodeRadius);
+    }
+  }
+
+  void computeNodePos(float x1, float y1, float x2, float y2) {
+    // Args are the top left and bottom right corners of the bounding box of the drawing
     
-    // TODO: Remove depth
+    // Hashmap that maps nodes to their x, y positions. Used for drawing connections between nodes.
+    // Computed once here and used many times in this.drawNN
+    this.nodePos = new HashMap<Node, Vec2f>();
     
     // Sensors
     float inputDY = (y2 - y1) / (this.input.size());
     for (int i = 0; i < this.input.size(); ++i) {
       Node node = this.input.get(i);
-      
-      fill(lerpColor(negColour, posColour, node.value));
-      circle(x1, y1 + i*inputDY, nodeRadius);
-      
-      nodePos.put(node, new Vec2f(x1, y1 + i*inputDY));
+      this.nodePos.put(node, new Vec2f(x1, y1 + i*inputDY));
     }
     
     // Outputs
     float outputDY = (y2 - y1) / (this.output.size());
     for (int i = 0; i < this.output.size(); ++i) {
       Node node = this.output.get(i);
-      
-      fill(lerpColor(negColour, posColour, node.value));
-      circle(x2, y1 + i*outputDY, nodeRadius);
-      
-      nodePos.put(node, new Vec2f(x2, y1 + i*outputDY));
+      this.nodePos.put(node, new Vec2f(x2, y1 + i*outputDY));
     }
     
-    // Hidden nodes and connections
+    // Hidden nodes
     for (Node node : this.nodes) {
-      if (node.gene.type != NodeType.SENSOR) { // Sensors are already drawn and have no incoming connections
-        if (node.gene.type == NodeType.HIDDEN) {
-          // Draw the node if it's a hidden node
-          float nodeX = random(x1 + 2*nodeRadius, x2 - 2*nodeRadius); // Bounds are set so that hidden nodes won't overlap with input/output nodes
+      if (node.gene.type == NodeType.HIDDEN) {
+          float nodeX = random(x1 + 20, x2 - 20); // Bounds are set so that hidden nodes won't overlap with input/output nodes
           float nodeY = random(y1 + 20, y2 - 20);
 
-          fill(lerpColor(negColour, posColour, node.value));
-          circle(nodeX, nodeY, nodeRadius);
-          
-          nodePos.put(node, new Vec2f(nodeX, nodeY));
-          }
-          
-          // Draw incoming connections of the node
-          for (int i = 0; i < node.inNodes.size(); ++i) {
-            Node inNode = node.inNodes.get(i);
-            float weight = node.weights.get(i);
-            
-            Vec2f inPos = nodePos.get(inNode);
-            Vec2f outPos = nodePos.get(node);
-
-            if (weight < 0.05) {
-              stroke(lerpColor(negColour, posColour, 0.5));
-            } else if (weight > 0) {
-              stroke(posColour);
-            } else if (weight < 0) {
-              stroke(negColour);
-            }
-            line(inPos.x, inPos.y, outPos.x, outPos.y);
-        }
-        stroke(0); // Reset stroke to black
+          this.nodePos.put(node, new Vec2f(nodeX, nodeY));
       }
     }
   }

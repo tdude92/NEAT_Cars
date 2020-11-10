@@ -1,18 +1,22 @@
 // NeuroEvolution of Augmented Topologies implemented according to:
 // http://nn.cs.utexas.edu/downloads/papers/stanley.gecco02_1.pdf
 
-// Note: during mutation keep a list of all createConn and createNode mutations
-//       to identify which mutations should have the same innovation number.
-
 class Evaluator {
+  Activation activation;
+   
   int generation = 0;
   Genome bestGenome, medianGenome, worstGenome;
   ArrayList<Species> species = new ArrayList<Species>();
-  Activation activation;
+  ArrayList<Species> extinct = new ArrayList<Species>(); // The extinct species from the generation as of right before .update() is called
   
   // Structure of arrays to store genomes and their nns
   Genome[] genomes;
   NeuralNet[] neuralNets;
+  
+  // Note: After Evaluator.updatePopulation() is called,
+  // this.genomes and this.neuralNets store info about the next generation to be evaluated, and
+  // this.generation, this.bestGenome, this.medianGenome, this.worstGenome, and this.species
+  // store info about the generation that just completed evaluation.
   
   Evaluator(int population, Activation activation) {
     this.genomes = new Genome[population];
@@ -32,6 +36,8 @@ class Evaluator {
     // Updates the population after raw fitnesses have been assigned to each genome
     // The population gets updated to the next generation, the fields get updated to the
     // current generation.
+    
+    this.extinct.clear();
     
     // Sort by raw fitness first to get best, median, worst genomes
     this.genomes = this.mergeSortGenomes(this.genomes, 0, this.genomes.length - 1);
@@ -126,6 +132,7 @@ class Evaluator {
       }
     }
     for (Species species : culledSpecies) {
+      this.extinct.add(species);
       this.species.remove(species);
     }
   }
@@ -207,14 +214,8 @@ class Evaluator {
           } else {
             // Offspring will have crossovers
             Genome parent2;
-            if (this.species.size() > 1 && random(1, 1) < CHANCE_INTERSPECIES) {
-              // Offspring will be the product of genomes of two different species
-              // TODO
-            } else {
-              // Offspring is from two genomes of the same species
-              parent2 = matingPartners.get(int(random(0, matingPartners.size())));
-              offspring = new Genome(parent, parent2);
-            }
+            parent2 = matingPartners.get(int(random(0, matingPartners.size())));
+            offspring = new Genome(parent, parent2);
           }
           
           // Add innovations to nodeInnovs and connInnovs
@@ -230,8 +231,6 @@ class Evaluator {
       }
     }
     this.genomes = genomeBuf; // Flush buffer
-    
-    // Set all duplicate innovations to be equal (TODO OR MAYBE LEAVE UNIMPLEMENTED)
   }
   
   void constructNeuralNets() {

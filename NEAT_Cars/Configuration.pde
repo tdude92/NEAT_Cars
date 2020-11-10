@@ -14,8 +14,6 @@ float WEIGHT_INIT_STDDEV = 1.0;
 float NEW_NODE_CHANCE = 0.03; // Chance of mutating a new node.
 float NEW_CONN_CHANCE = 0.05; // Chance of mutating a new connection.
 float WEIGHT_MUTATION_CHANCE = 0.8;  // Chance of weight mutating in offspring.
-float WEIGHT_REASSIGN_CHANCE = 0.01;  // Chance of the mutation being a reassignment to a random value.
-                                      // If weight will not be reassigned, perturb it slightly.
                                     
 float PERTURBATION_BOUND = 0.2; // Bounds of the random perturbation (-bound <= perturb < bound). Should be > 0.
 
@@ -29,7 +27,6 @@ float COMPATABILITY_THRESHOLD = 1.0; // Maximum compatability between two genome
 // Natural selection and reproduction
 float CULL_PERCENT = 0.25; // Percentage of the population that is not allowed to reproduce at the end of a generation.
 float CHANCE_NO_CROSSOVERS = 0.25;
-float CHANCE_INTERSPECIES = 0.0001;
 
 /* SIMULATION PARAMS AND FLAGS */
 
@@ -41,6 +38,7 @@ float FRAMERATE = 60;
 float DT = 1/FRAMERATE; // Seconds between frames
 boolean VISION_LINES = true; // Draw car vision lines
 boolean DRAW_CHECKPOINTS = true;
+boolean TRAIN_INDEF = false; // Set in the generation summary. Generation summary doesn't wait for user if true.
 boolean SIM_START = false; // Set to true when setup is finished
 String GENOME_SAVE_PATH = "model/car.xml"; // Path to save trained Genome XMLs. Set by GUI
 

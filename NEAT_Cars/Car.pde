@@ -145,7 +145,7 @@ class Car {
     
     // Update fitness (number of checkpoints crossed)
     if (this.crashed(this.course.checkpoints[this.idxNextCheckpoint])) { // crashed lol
-      this.fitness += 1;
+      this.fitness += 0.1;
       this.timeLimit += round(FRAMERATE*0.75); // Give the .update() calls equivalent of 0.75 seconds worth of extra time
       this.idxNextCheckpoint++;
       if (this.idxNextCheckpoint == this.course.checkpoints.length) {
@@ -299,13 +299,13 @@ class Car {
   void draw() {
     // Draw car, nn, vision lines, and write information onto sketch
     fill(255);
-    text(str(roundN(this.timer/FRAMERATE, 2)) + " sec", 1200, 180);
-    text(str(roundN(this.v.magnitude()*3.6/5, 1)) + " km/h", 1200, 200);
-    text("Fitness: " + str(roundN(this.fitness, 2)), 1200, 220);
-    text("Action 1: " + this.state1, 1200, 240);
-    text("Action 2: " + this.state2, 1200, 260);
+    text(str(roundN(this.timer/FRAMERATE, 2)) + " sec", 1150, 20);
+    text(str(roundN(this.v.magnitude()*3.6/5, 1)) + " km/h", 1150, 40);
+    text("Fitness: " + str(roundN(this.fitness, 2)), 1150, 60);
+    text("Action 1: " + this.state1, 1150, 80);
+    text("Action 2: " + this.state2, 1150, 100);
     
-    this.nn.drawNN(1200, 520, 1390, 710);
+    this.nn.drawNN(1060, 620, 1240, 720);
     
     // Draw vision lines
     LineSegment[] visionLines = {

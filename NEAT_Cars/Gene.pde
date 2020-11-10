@@ -75,12 +75,7 @@ class ConnGene {
   }
   
   void mutateWeight() {
-    if (random(0, 1) < WEIGHT_REASSIGN_CHANCE) {
-      // TODO
-      // Maybe leave unimplemented.
-    } else {
-      this.weight += random(-PERTURBATION_BOUND, PERTURBATION_BOUND);
-    }
+    this.weight += random(-PERTURBATION_BOUND, PERTURBATION_BOUND);
   }
 }
 
