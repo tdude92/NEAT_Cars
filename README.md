@@ -13,4 +13,5 @@
 
 
 NEAT Paper: http://nn.cs.utexas.edu/downloads/papers/stanley.ec02.pdf
+
 Car Physics: https://asawicki.info/Mirror/Car%20Physics%20for%20Games/Car%20Physics%20for%20Games.html (My implementation is sketchy)
