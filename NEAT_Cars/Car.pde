@@ -7,7 +7,7 @@
 float CAR_MASS = 500; // kg
 float CAR_W = 10; // Car width
 float CAR_L = 20; // Car length
-float STEERING_ANGLE = 3*PI/8; // Radians
+float STEERING_ANGLE = 2*PI/5; // Radians
 float VISION_RANGE = 500; // pixels
 
 // Adjust these to adjust car physics
@@ -44,7 +44,7 @@ class Car {
   String state2 = "null"; // left/right/straight
   
   // Holds the distance from each wall
-  float[] wallDistances = new float[5]; // {0deg, -45deg, -90deg, 90deg, 45deg} if 0 deg is straight ahead and the angle increases counterclockwise
+  float[] wallDistances = new float[7]; // {0deg, -20deg, -45deg, -90deg, 90deg, 45deg, 20deg} if 0 deg is straight ahead and the angle increases counterclockwise
   
   // Index of the next checkpoint the car should be visiting
   // Ensures that the car visits checkpoints in the correct order
@@ -161,10 +161,12 @@ class Car {
   void scanWalls() {
     LineSegment[] visionLines = {
       new LineSegment(this.pos, this.pos.add(this.dir.scale(VISION_RANGE))),
+      new LineSegment(this.pos, this.pos.add(this.dir.rotate(PI/32).scale(VISION_RANGE))),
       new LineSegment(this.pos, this.pos.add(this.dir.rotate(PI/4).scale(VISION_RANGE))),
       new LineSegment(this.pos, this.pos.add(this.dir.rotate(PI/2).scale(VISION_RANGE))),
       new LineSegment(this.pos, this.pos.add(this.dir.rotate(-PI/2).scale(VISION_RANGE))),
-      new LineSegment(this.pos, this.pos.add(this.dir.rotate(-PI/4).scale(VISION_RANGE)))
+      new LineSegment(this.pos, this.pos.add(this.dir.rotate(-PI/4).scale(VISION_RANGE))),
+      new LineSegment(this.pos, this.pos.add(this.dir.rotate(-PI/32).scale(VISION_RANGE)))
     };
     
     // Iterate through each vision line and find the nearest intersection with a wall, if any.
@@ -194,14 +196,16 @@ class Car {
   
   void performAction() {
     // Poll the nn for an action to perform
-    // NN INPUT: {FRONT, FRONT RIGHT, RIGHT, LEFT, FRONT LEFT}
+    // NN INPUT: {FRONT, -20deg, FRONT RIGHT, RIGHT, LEFT, FRONT LEFT, 20deg}
     // NN OUTPUT: {GAS, STEERING}
     float[] nnInput = {
       this.wallDistances[0],
       this.wallDistances[1],
       this.wallDistances[2],
       this.wallDistances[3],
-      this.wallDistances[4]
+      this.wallDistances[4],
+      this.wallDistances[5],
+      this.wallDistances[6]
     };
     
     float[] logits = this.nn.forward(nnInput);
@@ -310,10 +314,12 @@ class Car {
     // Draw vision lines
     LineSegment[] visionLines = {
       new LineSegment(this.pos, this.pos.add(this.dir.scale(VISION_RANGE))),
+      new LineSegment(this.pos, this.pos.add(this.dir.rotate(PI/32).scale(VISION_RANGE))),
       new LineSegment(this.pos, this.pos.add(this.dir.rotate(PI/4).scale(VISION_RANGE))),
       new LineSegment(this.pos, this.pos.add(this.dir.rotate(PI/2).scale(VISION_RANGE))),
       new LineSegment(this.pos, this.pos.add(this.dir.rotate(-PI/2).scale(VISION_RANGE))),
-      new LineSegment(this.pos, this.pos.add(this.dir.rotate(-PI/4).scale(VISION_RANGE)))
+      new LineSegment(this.pos, this.pos.add(this.dir.rotate(-PI/4).scale(VISION_RANGE))),
+      new LineSegment(this.pos, this.pos.add(this.dir.rotate(-PI/32).scale(VISION_RANGE)))
     };
     if (VISION_LINES) {
       for (int i = 0; i < visionLines.length; ++i) {

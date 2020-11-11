@@ -30,7 +30,9 @@ public void progMode_dl_click(GDropList source, GEvent event) { //_CODE_:progMod
     CAR_DIR = new Vec2f(1, 0);
     TRACK_FILE_PATH = "racetracks/easy_tck.txt";
   } else if (progMode_dl.getSelectedIndex() == 1) {
-    println("Course set to hardhairpins_tck.txt");
+    println("Course set to hardhairpins_tck.txt"); // The roads are too skinny for the car to make it's turns in time
+                                                   // TODO: rename hardhairpins_tck.txt to impossiblehairpins_tck.txt
+                                                   //       sometime x)
     CAR_POS = new Vec2f(100, 100);
     CAR_DIR = new Vec2f(0, 1);
     TRACK_FILE_PATH = "racetracks/hardhairpins_tck.txt";
@@ -133,7 +135,7 @@ public void quickgen_btn_click(GButton source, GEvent event) { //_CODE_:quickgen
   
   // Initialize evaluator
   eval = new Evaluator(POPULATION, DEFAULT_ACTIVATION);
-  eval.initPopulation(5, 2);
+  eval.initPopulation(7, 2);
   
   SIM_START = true;
   progSetupWin.close(); // Close the window and start the simulation
