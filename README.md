@@ -14,7 +14,7 @@ GUI Example:
 ![Interface Demo](https://raw.githubusercontent.com/tdude92/NEAT_Cars/main/gensummary_demo.png)
 Note 1: Input sizes of the nets are different from the Driving Example because I added two more "vision lines" to the front of the car (in hopes of beating the Impossible Hairpins track. Alas, my efforts were fruitless lol)
 
-Note 2: There's a big chunk of neural nets to the left of the normal distribution due to mutations that cause them to drive into the walls.
+Note 2: There's a big chunk of neural nets to the left of the normal distribution (on the Fitness Distribution chart) due to mutations that cause them to drive into the walls.
 
 
 NEAT Paper: http://nn.cs.utexas.edu/downloads/papers/stanley.ec02.pdf
