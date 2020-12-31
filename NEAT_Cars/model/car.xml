@@ -9,40 +9,37 @@
     <node-gene id="5" order="5" type="sen"/>
     <node-gene id="6" order="6" type="sen"/>
     <node-gene id="7" order="7" type="sen"/>
-    <node-gene id="1054" order="8" type="hid"/>
-    <node-gene id="365" order="9" type="hid"/>
-    <node-gene id="762" order="10" type="hid"/>
+    <node-gene id="483" order="8" type="hid"/>
+    <node-gene id="825" order="9" type="hid"/>
+    <node-gene id="1707" order="10" type="hid"/>
     <node-gene id="8" order="11" type="out"/>
-    <node-gene id="9" order="12" type="out"/>
+    <node-gene id="45" order="12" type="hid"/>
+    <node-gene id="9" order="13" type="out"/>
   </node-genes>
   <conn-genes>
-    <conn-gene enable="1" in="0" innovation="0" out="8" weight="0.5607308"/>
-    <conn-gene enable="1" in="0" innovation="1" out="9" weight="-0.863809"/>
-    <conn-gene enable="1" in="1" innovation="2" out="8" weight="-1.9134768"/>
-    <conn-gene enable="1" in="1" innovation="3" out="9" weight="0.8103425"/>
-    <conn-gene enable="1" in="2" innovation="4" out="8" weight="3.1848328"/>
-    <conn-gene enable="1" in="2" innovation="5" out="9" weight="0.9096737"/>
-    <conn-gene enable="1" in="3" innovation="6" out="8" weight="1.8525777"/>
-    <conn-gene enable="1" in="3" innovation="7" out="9" weight="3.2003667"/>
-    <conn-gene enable="1" in="4" innovation="8" out="8" weight="1.7504122"/>
-    <conn-gene enable="1" in="4" innovation="9" out="9" weight="0.4505083"/>
-    <conn-gene enable="1" in="5" innovation="10" out="8" weight="-1.0874562"/>
-    <conn-gene enable="1" in="5" innovation="11" out="9" weight="0.08578712"/>
-    <conn-gene enable="1" in="6" innovation="12" out="8" weight="2.3228045"/>
-    <conn-gene enable="1" in="6" innovation="13" out="9" weight="-3.4164863"/>
-    <conn-gene enable="1" in="7" innovation="14" out="8" weight="1.7160901"/>
-    <conn-gene enable="1" in="7" innovation="15" out="9" weight="-0.025745884"/>
-    <conn-gene enable="1" in="2" innovation="811" out="365" weight="1.3960701"/>
-    <conn-gene enable="1" in="365" innovation="812" out="8" weight="1.2302793"/>
-    <conn-gene enable="1" in="5" innovation="1134" out="365" weight="-0.722608"/>
-    <conn-gene enable="1" in="365" innovation="1551" out="9" weight="0.35253537"/>
-    <conn-gene enable="1" in="3" innovation="1821" out="762" weight="1.2046356"/>
-    <conn-gene enable="1" in="762" innovation="1822" out="8" weight="2.100042"/>
-    <conn-gene enable="1" in="2" innovation="2534" out="762" weight="-1.0767217"/>
-    <conn-gene enable="1" in="5" innovation="2746" out="1054" weight="1.2632351"/>
-    <conn-gene enable="1" in="1054" innovation="2747" out="365" weight="-0.6343706"/>
-    <conn-gene enable="1" in="7" innovation="2748" out="365" weight="-1.3896972"/>
-    <conn-gene enable="1" in="365" innovation="2946" out="762" weight="1.5139478"/>
-    <conn-gene enable="1" in="5" innovation="3597" out="762" weight="0.29686803"/>
+    <conn-gene enable="1" in="0" innovation="0" out="8" weight="0.35149893"/>
+    <conn-gene enable="1" in="0" innovation="1" out="9" weight="-0.8007026"/>
+    <conn-gene enable="1" in="1" innovation="2" out="8" weight="0.45447814"/>
+    <conn-gene enable="1" in="1" innovation="3" out="9" weight="1.4131464"/>
+    <conn-gene enable="1" in="2" innovation="4" out="8" weight="3.9911523"/>
+    <conn-gene enable="1" in="2" innovation="5" out="9" weight="1.3855596"/>
+    <conn-gene enable="0" in="3" innovation="6" out="8" weight="2.3958855"/>
+    <conn-gene enable="1" in="3" innovation="7" out="9" weight="3.7369483"/>
+    <conn-gene enable="1" in="4" innovation="8" out="8" weight="1.0969204"/>
+    <conn-gene enable="1" in="4" innovation="9" out="9" weight="1.6637499"/>
+    <conn-gene enable="1" in="5" innovation="10" out="8" weight="1.8312963"/>
+    <conn-gene enable="1" in="5" innovation="11" out="9" weight="-0.9464314"/>
+    <conn-gene enable="1" in="6" innovation="12" out="8" weight="2.584489"/>
+    <conn-gene enable="1" in="6" innovation="13" out="9" weight="-3.9582458"/>
+    <conn-gene enable="1" in="7" innovation="14" out="8" weight="0.8974629"/>
+    <conn-gene enable="1" in="7" innovation="15" out="9" weight="-0.8360372"/>
+    <conn-gene enable="1" in="1" innovation="87" out="45" weight="1.3054615"/>
+    <conn-gene enable="1" in="45" innovation="88" out="9" weight="-0.111202985"/>
+    <conn-gene enable="1" in="5" innovation="1451" out="483" weight="1.3060668"/>
+    <conn-gene enable="1" in="483" innovation="1452" out="8" weight="-0.15369582"/>
+    <conn-gene enable="1" in="1" innovation="2587" out="825" weight="1.4979805"/>
+    <conn-gene enable="1" in="825" innovation="2588" out="8" weight="0.58912"/>
+    <conn-gene enable="1" in="3" innovation="5811" out="1707" weight="1.0"/>
+    <conn-gene enable="1" in="1707" innovation="5812" out="8" weight="2.3958855"/>
   </conn-genes>
 </genome>
